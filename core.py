@@ -3,9 +3,12 @@ import sys
 import os
 import shutil
 import win32com.client
-#import pandas as pd
 import json
 import csv
+import pyminizip
+import pikepdf
+from pikepdf import Pdf
+import pyminizip
 import tkinter as tk
 import tkinter.filedialog as filedialog
 from tkinter import ttk
@@ -219,21 +222,38 @@ class View:
         self.edit_frame = ttk.Frame(self.right_frame)
         self.edit_label = ttk.Label(self.edit_frame, text="編集")
         # edit name
-        self.edit_name_frame = ttk.Label(self.edit_frame)
-        self.edit_name_label = ttk.Label(self.edit_name_frame, text="名前：")
-        self.edit_name = ttk.Entry(self.edit_name_frame)
+        self.edit_name_label = ttk.Label(self.edit_frame, text="名前：")
+        self.edit_name = ttk.Entry(self.edit_frame)
+        # pdf pass
+        self.edit_pdfpass_label = ttk.Label(self.edit_frame, text="PDFパスワード：")
+        self.edit_pdfpass = ttk.Entry(self.edit_frame)
+        # zip pass
+        self.edit_zippass_label = ttk.Label(self.edit_frame, text="ZIPパスワード：")
+        self.edit_zippass = ttk.Entry(self.edit_frame)
+        # pdf filename
+        self.edit_pdfname_label = ttk.Label(self.edit_frame, text="PDFファイル名：")
+        self.edit_pdfname = ttk.Entry(self.edit_frame)
+        # zip filename
+        self.edit_zipname_label = ttk.Label(self.edit_frame, text="ZIPファイル名：")
+        self.edit_zipname = ttk.Entry(self.edit_frame)
         # save button
         self.edit_save = ttk.Button(self.edit_frame, text="変更を保存")
 
         self.edit_frame.grid(column=0, row=0, sticky=tk.NSEW)
         self.edit_label.grid(column=0, row=0, sticky=tk.W)
-        self.edit_name_frame.grid(column=0, row=1, sticky=tk.EW)
-        self.edit_name_label.grid(column=0, row=0, sticky=tk.W)
-        self.edit_name.grid(column=1, row=0, sticky=tk.EW)
-        self.edit_save.grid(column=0, row=2, sticky=tk.E)
+        self.edit_name_label.grid(column=0, row=1, sticky=tk.E)
+        self.edit_name.grid(column=1, row=1, sticky=tk.EW)
+        self.edit_pdfpass_label.grid(column=0, row=2, sticky=tk.E)
+        self.edit_pdfpass.grid(column=1, row=2, sticky=tk.EW)
+        self.edit_zippass_label.grid(column=0, row=3, sticky=tk.E)
+        self.edit_zippass.grid(column=1, row=3, sticky=tk.EW)
+        self.edit_pdfname_label.grid(column=0, row=4, sticky=tk.E)
+        self.edit_pdfname.grid(column=1, row=4, sticky=tk.EW)
+        self.edit_zipname_label.grid(column=0, row=5, sticky=tk.E)
+        self.edit_zipname.grid(column=1, row=5, sticky=tk.EW)
+        self.edit_save.grid(column=1, row=6, sticky=tk.E)
 
-        self.edit_frame.columnconfigure(0, weight=1)
-        self.edit_name_frame.columnconfigure(1, weight=1)
+        self.edit_frame.columnconfigure(1, weight=1)
 
         # setting
         self.setting_frame = ttk.Frame(self.right_frame)
@@ -247,16 +267,16 @@ class View:
         self.setting_offset_label = ttk.Label(self.setting_frame, text="ズレ（右×下）：")
         self.setting_offset_frame = ttk.Frame(self.setting_frame)
         self.setting_offset_column = ttk.Entry(self.setting_offset_frame, width=10)
-        self.setting_offset_label = ttk.Label(self.setting_offset_frame, text="×")
+        self.setting_offset_middle = ttk.Label(self.setting_offset_frame, text="×")
         self.setting_offset_row = ttk.Entry(self.setting_offset_frame, width=10)
         # range
         self.setting_range_label = ttk.Label(self.setting_frame, text="範囲（横×縦）：")
         self.setting_range_frame = ttk.Frame(self.setting_frame)
         self.setting_range_column = ttk.Entry(self.setting_range_frame, width=10)
-        self.setting_range_label = ttk.Label(self.setting_range_frame, text="×")
+        self.setting_range_middle = ttk.Label(self.setting_range_frame, text="×")
         self.setting_range_row = ttk.Entry(self.setting_range_frame, width=10)
         # output file
-        self.setting_output_label = ttk.Label(self.setting_frame, text="出力ファイル：")
+        self.setting_output_label = ttk.Label(self.setting_frame, text="出力場所：")
         self.setting_output_frame = ttk.Frame(self.setting_frame)
         self.setting_output = ttk.Entry(self.setting_output_frame)
         self.setting_output_button = ttk.Button(self.setting_output_frame, text="参照", width="5")
@@ -270,17 +290,17 @@ class View:
         self.setting_offset_label.grid(column=0, row=2, sticky=tk.E)
         self.setting_offset_frame.grid(column=1, row=2, sticky=tk.EW)
         self.setting_offset_column.grid(column=0, row=0)
-        self.setting_offset_label.grid(column=1, row=0)
+        self.setting_offset_middle.grid(column=1, row=0)
         self.setting_offset_row.grid(column=2, row=0)
         self.setting_range_label.grid(column=0, row=3, sticky=tk.E)
         self.setting_range_frame.grid(column=1, row=3, sticky=tk.EW)
         self.setting_range_column.grid(column=0, row=0)
-        self.setting_range_label.grid(column=1, row=0)
+        self.setting_range_middle.grid(column=1, row=0)
         self.setting_range_row.grid(column=2, row=0)
         self.setting_output_label.grid(column=0, row=4, sticky=tk.E)
         self.setting_output_frame.grid(column=1, row=4, sticky=tk.EW)
         self.setting_output.grid(column=0, row=0, sticky=tk.EW)
-        self.setting_output_button.grid(column=1, row=0, sticky=tk.W)
+        self.setting_output_button.grid(column=1, row=0, sticky=tk.E)
 
         self.setting_frame.columnconfigure(1, weight=1)
         self.setting_input_frame.columnconfigure(0, weight=1)
@@ -294,9 +314,17 @@ class View:
         #ttk.Style().configure("A.TFrame", padding=6, relief="flat",   background="#F00")
         #ttk.Style().configure("B.TFrame", padding=6, relief="flat",  background="#0F0")
 
-    def setEditName(self, name):
+    def setEdit(self, name):
         self.edit_name.delete(0, tk.END)
-        self.edit_name.insert(tk.END, name)
+        self.edit_name.insert(tk.END, name.name)
+        self.edit_pdfpass.delete(0, tk.END)
+        self.edit_pdfpass.insert(tk.END, name.pdf_password or "")
+        self.edit_zippass.delete(0, tk.END)
+        self.edit_zippass.insert(tk.END, name.zip_password or "")
+        self.edit_pdfname.delete(0, tk.END)
+        self.edit_pdfname.insert(tk.END, name.pdf_filename or "")
+        self.edit_zipname.delete(0, tk.END)
+        self.edit_zipname.insert(tk.END, name.zip_filename or "")
 
     def push_addbutton(self):
         for func in self.on_push_addbutton:
@@ -327,7 +355,6 @@ class View:
             func()
 
     def push_genpdf_button(self):
-        self.namelist['listvariable'] = tk.StringVar(value=[0,1,2])
         for func in self.on_push_genpdf_button:
             func()
 
@@ -405,6 +432,8 @@ class Controller:
         # extend params
         self.name_list_selected = []
         self.pdf_list_selected = []
+        # other param
+        self._editins = None
         # attributes
         self.updateData_attrs = ["name_sort", "pdf_sort", "input_file", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
         self.updateView_attrs = ["name_list", "pdf_list", "name_sort", "pdf_sort", "input_file", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
@@ -496,15 +525,38 @@ class Controller:
         addins.in_pdf_list = False
 
     def push_edit_save(self):
-        if len(self.name_list_selected) is 0:
+        if self._editins is None:
             return
         log("push_edit_save")
         name = self.view.edit_name.get()
-        if name is "" or name is None:
+        pdf_password = self.view.edit_pdfpass.get()
+        zip_password = self.view.edit_zippass.get()
+        pdf_filename = self.view.edit_pdfname.get()
+        zip_filename = self.view.edit_zipname.get()
+        # check
+        if name == "" or name is None:
             print("Error : invalid name")
-        selected = self.name_list_selected[0]
-        editins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
-        editins.name = name
+            return
+        if pdf_filename == "":
+            print("Error : invalid pdf_filename")
+            return
+        if zip_filename == "":
+            print("Error : invalid zip_filename")
+            return
+        # correct
+        pdf_password = pdf_password if pdf_password != "" else None
+        zip_password = zip_password if zip_password != "" else None
+        pdf_filename = pdf_filename if pdf_filename.endswith(".pdf") else pdf_filename + ".pdf"
+        zip_filename = zip_filename if zip_filename.endswith(".zip") else zip_filename + ".zip"
+        # save data
+        #selected = self.name_list_selected[0]
+        #editins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
+        self._editins.name = name
+        self._editins.pdf_password = pdf_password
+        self._editins.zip_password = zip_password
+        self._editins.pdf_filename = pdf_filename
+        self._editins.zip_filename = zip_filename
+        self.view.setEdit(self._editins)
 
     def push_setting_input_button(self):
         log("push_setting_input_button")
@@ -518,25 +570,30 @@ class Controller:
     def push_setting_output_button(self):
         log("push_setting_output_button")
         dir = os.path.dirname(self.view.setting_output.get())
-        file_type = [('PDFファイル', '*.pdf'), ('', '*')]
-        file = filedialog.asksaveasfilename(filetypes=file_type, initialdir=dir)
-        if file is "":
+        #file_type = [('PDFファイル', '*.pdf'), ('', '*')]
+        #file = filedialog.asksaveasfilename(filetypes=file_type, initialdir=dir)
+        directory = filedialog.askdirectory(initialdir=dir)
+        if directory is "":
             return
-        self.output_file = '"' + file + '"'
+        self.output_file = '"' + directory + '"'
 
     def push_genpdf_button(self):
         log("push_genpdf_button")
+        pdflist = [name for name in self._name_list if name.in_pdf_list]
         for file in [x.strip('" ') for x in self.input_file.split(",")]:
             if not os.path.exists(file):
                 print("Error : file doesn't exist. - ", file)
                 continue
-            genPDF(file, self.output_file.strip('" '), self.pdf_list, self.offset, self.range)
+            genPDF(file, self.output_file.strip('" '), pdflist, self.offset, self.range)
 
     def select_namelist(self, event):
         if len(self.name_list_selected) is 0:
             return
         log("select_namelist : ", self.name_list[self.name_list_selected[0]])
-        self.view.setEditName(self.name_list[self.name_list_selected[0]])
+        selected = self.name_list_selected[0]
+        editins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
+        self._editins = editins
+        self.view.setEdit(editins)
 
     def select_pdflist(self, event):
         if len(self.pdf_list_selected) is 0:
@@ -560,7 +617,7 @@ class Name:
 
     @staticmethod
     def toDictNames(names):
-        save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list']
+        save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list', 'pdf_password', 'zip_password', 'pdf_filename', 'zip_filename']
         return [{key : getattr(name, key) for key in save_attrs} for name in names]
 
     @staticmethod
@@ -602,12 +659,20 @@ class Name:
         name,
         name_list_index=None,
         pdf_list_index=None,
-        in_pdf_list=None
+        in_pdf_list=None,
+        pdf_password=None,
+        zip_password=None,
+        pdf_filename=None,
+        zip_filename=None
     ):
         self.name = name
         self.name_list_index = name_list_index or -1
         self.pdf_list_index = pdf_list_index or -1
         self.in_pdf_list = in_pdf_list or False
+        self.pdf_password = pdf_password
+        self.zip_password = zip_password
+        self.pdf_filename = pdf_filename or "pdffile.pdf"
+        self.zip_filename = zip_filename or "zipfile.zip"
 
     def __repr__(self):
         s = ""
@@ -621,10 +686,29 @@ class Name:
             s += str(k) + " : " + str(v) + ", "
         return s
 
+# pdf_dir
+# |- rawpdf
+# |  |- pdffile1.pdf
+# |  |- pdffile2.pdf
+# |  |-      :
+# |- encrypt
+# |  |- encrypt1.pdf
+# |  |- encrypt2.pdf
+# |  |-      :
+# |- result1.zip
+# |- result2.zip
+# |-    :
 def genPDF(xlsx_file, pdf_file, name_list, offset, range):
     excel = None
+    rawpdf_dir = os.path.abspath(os.path.join(pdf_file, "rawpdf"))
+    encrypt_dir = os.path.abspath(os.path.join(pdf_file, "encrypt"))
+    if not os.path.isdir(rawpdf_dir):
+        os.mkdir(rawpdf_dir)
+    if not os.path.isdir(encrypt_dir):
+        os.mkdir(encrypt_dir)
     #コピーファイルを一時的に作成
-    tmpfile = os.path.join(os.path.dirname(pdf_file), "_" + os.path.basename(xlsx_file))
+    #tmpfile = os.path.join(os.path.dirname(pdf_file), "_" + os.path.basename(xlsx_file))
+    tmpfile = os.path.abspath(os.path.join(pdf_file, "_" + os.path.basename(xlsx_file)))
     shutil.copyfile(xlsx_file, tmpfile)
     try:
         excel = win32com.client.DispatchEx("Excel.Application")
@@ -637,15 +721,15 @@ def genPDF(xlsx_file, pdf_file, name_list, offset, range):
         wb = excel.Workbooks.Open(tmpfile, None, True)
         excel.Visible = False
         for sheet in wb.Worksheets:
-            # erase print range
             sheet.Activate()
             for name in name_list:
+                # erase print range
                 sheet.ResetAllPageBreaks()
-                result = sheet.UsedRange.Find(name)
+                # search name
+                result = sheet.UsedRange.Find(name.name)
                 if result is None:
                     continue
-                print(offset, range)
-                print(result.Row, ',', result.Column)
+                # calc range
                 upperleft = sheet.Cells(
                     result.Row + offset[1],
                     result.Column + offset[0]
@@ -654,15 +738,43 @@ def genPDF(xlsx_file, pdf_file, name_list, offset, range):
                     result.Row + offset[1] + range[1] - 1,
                     result.Column + offset[0] + range[0] - 1
                 )
+                # set print range
                 print_range = upperleft.Address + ":" + bottomright.Address
                 sheet.PageSetup.PrintArea = print_range
-                filename = os.path.join(os.path.dirname(pdf_file), name.replace(" ", "") + ".pdf")
-                if os.path.exists(filename):
-                    os.remove(filename)
-                log("save : ", filename, ", range : ", print_range)
-                sheet.ExportAsFixedFormat(0, filename)
+                #rawpdffile = os.path.join(os.path.dirname(pdf_file), name.replace(" ", "") + ".pdf")
+                # save as pdf file
+                rawpdffile = os.path.abspath(os.path.join(rawpdf_dir, name.name.replace(" ", "") + ".pdf"))
+                if os.path.exists(rawpdffile):
+                    os.remove(rawpdffile)
+                log("save : ", rawpdffile, ", range : ", print_range)
+                sheet.ExportAsFixedFormat(0, rawpdffile)
+                # set password to pdf file
+                encryptfile = os.path.abspath(os.path.join(encrypt_dir, name.name.replace(" ", "") + ".pdf"))
+                if os.path.exists(encryptfile):
+                    os.remove(encryptfile)
+                log("save : ", encryptfile)
+                rawpdf = Pdf.open(rawpdffile)
+                encryptpdf = Pdf.new()
+                encryptpdf.pages.extend(rawpdf.pages)
+                encryptpdf.save(encryptfile, encryption=pikepdf.Encryption(
+                    user=name.pdf_password or "", owner=name.pdf_password or ""
+                ))
+                rawpdf.close()
+                encryptpdf.close()
+                # create zip file
+                zip_dir = os.path.abspath(os.path.join(pdf_file, name.name))
+                if not os.path.isdir(zip_dir):
+                    os.mkdir(zip_dir)
+                zipfile = os.path.abspath(os.path.join(zip_dir, name.zip_filename.replace(" ", "")))
+                if os.path.exists(zipfile):
+                    os.remove(zipfile)
+                log("save : ", zipfile)
+                pyminizip.compress(
+                    encryptfile.encode('cp932'), '', zipfile.encode('cp932'), name.zip_password or "", int(0)
+                )
     except Exception as e:
-        print('Error : cannot save as pdf.', e)
+        #print('Error : cannot save as pdf.', e)
+        raise e
     finally:
         wb.Close(False)
         excel.Quit()
