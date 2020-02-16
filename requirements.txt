@@ -1,5 +1,4 @@
-numpy==1.18.1
-python-dateutil==2.8.1
-pytz==2019.3
+lxml==4.5.0
+pikepdf==1.10.1
+pyminizip==0.2.4
 pywin32==227
-six==1.14.0

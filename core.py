@@ -2,15 +2,16 @@
 import sys
 import os
 import shutil
-import win32com.client
 import json
 import csv
+import win32com.client
 import pyminizip
 import pikepdf
 from pikepdf import Pdf
 import pyminizip
 import tkinter as tk
 import tkinter.filedialog as filedialog
+import tkinter.messagebox as messagebox
 from tkinter import ttk
 from utils import *
 
@@ -29,6 +30,9 @@ class View:
         self.window.geometry("640x480")
         self.window.iconbitmap(default='icon.ico')
 
+        # info data
+        self.info_data = tk.StringVar()
+
         # list data
         self.namelist_data = tk.StringVar()
         self.pdflist_data = tk.StringVar()
@@ -41,6 +45,10 @@ class View:
         #text box
         self.namebox = None
         self.edit_name = None
+        self.edit_pdfpass = None
+        self.edit_zippass = None
+        self.edit_pdfname = None
+        self.edit_zipname = None
         self.setting_input = None
         self.setting_offset_column = None
         self.setting_offset_row = None
@@ -124,6 +132,11 @@ class View:
         self.right_frame.rowconfigure(0, weight=1)
         self.right_frame.rowconfigure(1, weight=1)
         self.right_frame.rowconfigure(2, weight=1)
+
+        # info field
+        self.info_label = ttk.Label(self.main_frame, textvariable=self.info_data)
+
+        self.info_label.grid(column=0, row=1, columnspan=2, sticky=tk.EW)
 
         # name box
         self.namebox_frame = ttk.Frame(self.left_frame)
@@ -326,6 +339,54 @@ class View:
         self.edit_zipname.delete(0, tk.END)
         self.edit_zipname.insert(tk.END, name.zip_filename or "")
 
+    def setInfo(self, info):
+        self.info_data.set(info)
+        self.window.update()
+
+    def messageInfo(self, title, info):
+        messagebox.showinfo(title, info)
+
+    def enableGen(self):
+        self.setGen(True)
+
+    def disableGen(self):
+        self.setGen(False)
+
+    def setGen(self, is_gen):
+        #text box
+        self.namebox.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_name.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_pdfpass.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_zippass.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_pdfname.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_zipname.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_input.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_offset_column.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_offset_row.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_range_column.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_range_row.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_output.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+
+        #button
+        self.addbutton.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.namelistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.listop_add.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.pdflistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_save.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_input_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_output_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.genpdf_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+
+        #list
+        self.namelist.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.pdflist.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+
+        #combobox
+        self.namelistop_sort.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.pdflistop_sort.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+
+        self.window.update()
+
     def push_addbutton(self):
         for func in self.on_push_addbutton:
             func()
@@ -507,6 +568,7 @@ class Controller:
         selected = self.name_list_selected[0]
         popins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
         self._name_list.pop(self._name_list.index(popins))
+        self.view.setInfo('「' + popins.name + '」を削除しました．')
 
     def push_listop_add(self):
         if len(self.name_list_selected) is 0:
@@ -515,14 +577,16 @@ class Controller:
         selected = self.name_list_selected[0]
         addins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
         addins.in_pdf_list = True
+        self.view.setInfo('「' + addins.name + '」をPDF化リストに追加しました．')
 
     def push_pdflistop_trash(self):
         if len(self.pdf_list_selected) is 0:
             return
         log("push_pdflistop_trash")
         selected = self.pdf_list_selected[0]
-        addins = [ins for ins in self._name_list if ins.pdf_list_index is selected][0]
-        addins.in_pdf_list = False
+        popins = [ins for ins in self._name_list if ins.pdf_list_index is selected][0]
+        popins.in_pdf_list = False
+        self.view.setInfo('「' + popins.name + '」をPDF化リストから削除しました．')
 
     def push_edit_save(self):
         if self._editins is None:
@@ -536,12 +600,15 @@ class Controller:
         # check
         if name == "" or name is None:
             print("Error : invalid name")
+            self.view.setInfo('名前を入力してください．')
             return
         if pdf_filename == "":
             print("Error : invalid pdf_filename")
+            self.view.setInfo('PDFファイル名を入力してください．')
             return
         if zip_filename == "":
             print("Error : invalid zip_filename")
+            self.view.setInfo('ZIPファイル名を入力してください．')
             return
         # correct
         pdf_password = pdf_password if pdf_password != "" else None
@@ -557,6 +624,7 @@ class Controller:
         self._editins.pdf_filename = pdf_filename
         self._editins.zip_filename = zip_filename
         self.view.setEdit(self._editins)
+        self.view.setInfo('「' + name + '」の変更内容を保存しました．')
 
     def push_setting_input_button(self):
         log("push_setting_input_button")
@@ -579,12 +647,28 @@ class Controller:
 
     def push_genpdf_button(self):
         log("push_genpdf_button")
+        self.view.setInfo('生成を開始します．（しばらく，ウィンドウが固まります．）')
+        self.view.enableGen()
         pdflist = [name for name in self._name_list if name.in_pdf_list]
+        is_success = True
+        Name.resetSuccess(pdflist)
         for file in [x.strip('" ') for x in self.input_file.split(",")]:
             if not os.path.exists(file):
                 print("Error : file doesn't exist. - ", file)
+                self.view.setInfo('エクセルファイルが見つかりませんでした．:' + file)
                 continue
-            genPDF(file, self.output_file.strip('" '), pdflist, self.offset, self.range)
+            is_success &= genPDF(file, self.output_file.strip('" '), pdflist, self.offset, self.range, self.view.setInfo)
+        if is_success:
+            self.view.setInfo('正常に終了しました．')
+        else:
+            self.view.setInfo('何らかの問題が発生しました．出力ファイルが欠損している可能性があります．')
+        # show result
+        title = "出力結果"
+        message = ""
+        for elem in pdflist:
+            message += elem.name + "\t : " + ("成功" if elem.is_success else "失敗") + "\n"
+        self.view.messageInfo(title, message)
+        self.view.disableGen()
 
     def select_namelist(self, event):
         if len(self.name_list_selected) is 0:
@@ -655,6 +739,11 @@ class Name:
         for i in range(0, len(sorted_list)):
             sorted_list[i].pdf_list_index = i
 
+    @staticmethod
+    def resetSuccess(names):
+        for name in names:
+            name.is_success = False
+
     def __init__(self,
         name,
         name_list_index=None,
@@ -673,6 +762,9 @@ class Name:
         self.zip_password = zip_password
         self.pdf_filename = pdf_filename or "pdffile.pdf"
         self.zip_filename = zip_filename or "zipfile.zip"
+
+        # non param
+        self.is_success = False
 
     def __repr__(self):
         s = ""
@@ -698,8 +790,9 @@ class Name:
 # |- result1.zip
 # |- result2.zip
 # |-    :
-def genPDF(xlsx_file, pdf_file, name_list, offset, range):
+def genPDF(xlsx_file, pdf_file, name_list, offset, range, infofunc):
     excel = None
+    is_success = True
     rawpdf_dir = os.path.abspath(os.path.join(pdf_file, "rawpdf"))
     encrypt_dir = os.path.abspath(os.path.join(pdf_file, "encrypt"))
     if not os.path.isdir(rawpdf_dir):
@@ -723,60 +816,72 @@ def genPDF(xlsx_file, pdf_file, name_list, offset, range):
         for sheet in wb.Worksheets:
             sheet.Activate()
             for name in name_list:
-                # erase print range
-                sheet.ResetAllPageBreaks()
-                # search name
-                result = sheet.UsedRange.Find(name.name)
-                if result is None:
-                    continue
-                # calc range
-                upperleft = sheet.Cells(
-                    result.Row + offset[1],
-                    result.Column + offset[0]
-                )
-                bottomright = sheet.Cells(
-                    result.Row + offset[1] + range[1] - 1,
-                    result.Column + offset[0] + range[0] - 1
-                )
-                # set print range
-                print_range = upperleft.Address + ":" + bottomright.Address
-                sheet.PageSetup.PrintArea = print_range
-                #rawpdffile = os.path.join(os.path.dirname(pdf_file), name.replace(" ", "") + ".pdf")
-                # save as pdf file
-                rawpdffile = os.path.abspath(os.path.join(rawpdf_dir, name.name.replace(" ", "") + ".pdf"))
-                if os.path.exists(rawpdffile):
-                    os.remove(rawpdffile)
-                log("save : ", rawpdffile, ", range : ", print_range)
-                sheet.ExportAsFixedFormat(0, rawpdffile)
-                # set password to pdf file
-                encryptfile = os.path.abspath(os.path.join(encrypt_dir, name.name.replace(" ", "") + ".pdf"))
-                if os.path.exists(encryptfile):
-                    os.remove(encryptfile)
-                log("save : ", encryptfile)
-                rawpdf = Pdf.open(rawpdffile)
-                encryptpdf = Pdf.new()
-                encryptpdf.pages.extend(rawpdf.pages)
-                encryptpdf.save(encryptfile, encryption=pikepdf.Encryption(
-                    user=name.pdf_password or "", owner=name.pdf_password or ""
-                ))
-                rawpdf.close()
-                encryptpdf.close()
-                # create zip file
-                zip_dir = os.path.abspath(os.path.join(pdf_file, name.name))
-                if not os.path.isdir(zip_dir):
-                    os.mkdir(zip_dir)
-                zipfile = os.path.abspath(os.path.join(zip_dir, name.zip_filename.replace(" ", "")))
-                if os.path.exists(zipfile):
-                    os.remove(zipfile)
-                log("save : ", zipfile)
-                pyminizip.compress(
-                    encryptfile.encode('cp932'), '', zipfile.encode('cp932'), name.zip_password or "", int(0)
-                )
+                try:
+                    # erase print range
+                    sheet.ResetAllPageBreaks()
+                    # search name
+                    result = sheet.UsedRange.Find(name.name)
+                    if result is None:
+                        continue
+                    # calc range
+                    upperleft = sheet.Cells(
+                        result.Row + offset[1],
+                        result.Column + offset[0]
+                    )
+                    bottomright = sheet.Cells(
+                        result.Row + offset[1] + range[1] - 1,
+                        result.Column + offset[0] + range[0] - 1
+                    )
+                    # set print range
+                    print_range = upperleft.Address + ":" + bottomright.Address
+                    sheet.PageSetup.PrintArea = print_range
+                    #rawpdffile = os.path.join(os.path.dirname(pdf_file), name.replace(" ", "") + ".pdf")
+                    # save as pdf file
+                    rawpdffile = os.path.abspath(os.path.join(rawpdf_dir, name.name.replace(" ", "") + ".pdf"))
+                    if os.path.exists(rawpdffile):
+                        os.remove(rawpdffile)
+                    log("save : ", rawpdffile, ", range : ", print_range)
+                    infofunc('「' + name.name + '」のPDFファイルを作成中')
+                    sheet.ExportAsFixedFormat(0, rawpdffile)
+                    # set password to pdf file
+                    encryptfile = os.path.abspath(os.path.join(encrypt_dir, name.name.replace(" ", "") + ".pdf"))
+                    if os.path.exists(encryptfile):
+                        os.remove(encryptfile)
+                    log("save : ", encryptfile)
+                    infofunc('「' + name.name + '」のPDFファイルを暗号化中')
+                    rawpdf = Pdf.open(rawpdffile)
+                    encryptpdf = Pdf.new()
+                    encryptpdf.pages.extend(rawpdf.pages)
+                    encryptpdf.save(encryptfile, encryption=pikepdf.Encryption(
+                        user=name.pdf_password or "", owner=name.pdf_password or ""
+                    ))
+                    rawpdf.close()
+                    encryptpdf.close()
+                    # create zip file
+                    zip_dir = os.path.abspath(os.path.join(pdf_file, name.name))
+                    if not os.path.isdir(zip_dir):
+                        os.mkdir(zip_dir)
+                    zipfile = os.path.abspath(os.path.join(zip_dir, name.zip_filename.replace(" ", "")))
+                    if os.path.exists(zipfile):
+                        os.remove(zipfile)
+                    log("save : ", zipfile)
+                    infofunc('「' + name.name + '」をZIPに圧縮中')
+                    pyminizip.compress(
+                        encryptfile.encode('cp932'), '', zipfile.encode('cp932'), name.zip_password or "", int(0)
+                    )
+                    name.is_success = True
+                    infofunc('「' + name.name + '」のファイル生成を完了しました．')
+                except:
+                    infofunc('「' + name.name + '」のファイル生成に失敗しました．')
+                    is_success = False
     except Exception as e:
-        #print('Error : cannot save as pdf.', e)
-        raise e
+        print('Error : cannot save as pdf.', e)
+        infofunc('エクセルファイルの処理中に問題が発生しました．')
+        is_success = False
+        #raise e
     finally:
         wb.Close(False)
         excel.Quit()
     #コピーファイルの削除
     os.remove(tmpfile)
+    return is_success
