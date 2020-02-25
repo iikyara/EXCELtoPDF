@@ -1,3 +1,5 @@
+import os
+
 DEBUG = True
 def log(*arg, **darg):
     if DEBUG:
@@ -21,8 +23,8 @@ def tryParse(src, type, default=0):
 def tryRemoveFile(filename):
     try:
         os.remove(filename)
-    except:
-        pass
+    except Exception as e:
+        print('tryRemoveFile - ', e)
 
 def getSheetsName(xlsx_files, infofunc=None):
     excel = None

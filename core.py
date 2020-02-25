@@ -699,7 +699,7 @@ class Controller:
     @input_file.setter
     def input_file(self, value):
         if self.current_project is not None:
-            self.current_project.input_file.filename = value
+            self.current_project.input_file.setFilename(value)
 
     @property
     def sheet_list(self):
@@ -889,20 +889,28 @@ class Controller:
 
     def push_setting_input_button(self):
         log("push_setting_input_button")
+        # select file
         dir = os.path.dirname(self.view.setting_input.get())
         file_type = [('エクセルファイル', '*.xlsx'), ('', '*')]
         file = filedialog.askopenfilename(filetypes=file_type, initialdir=dir)
         if len(file) == 0:
             return
         self.input_file = file
+        # load
+        self.view.setInfo(self.current_project.input_file.filename + 'をロード中')
         if not self.current_project.input_file.reloadSheets():
             self.view.setInfo(self.current_project.input_file.filename + 'が見つかりませんでした．')
+        else:
+            self.view.setInfo(self.current_project.input_file.filename + 'を正常に読み込みました．')
 
     def push_setting_sheet_button(self):
         log("push_setting_sheet_button")
+        self.view.setInfo(self.current_project.input_file.filename + 'をロード中')
         self.current_project.input_file.reloadSheets()
         if not self.current_project.input_file.reloadSheets():
             self.view.setInfo(self.current_project.input_file.filename + 'が見つかりませんでした．')
+        else:
+            self.view.setInfo(self.current_project.input_file.filename + 'を正常に読み込みました．')
 
     def push_setting_output_button(self):
         log("push_setting_output_button")
@@ -1160,9 +1168,11 @@ class ExcelFile:
     tmp_dir = "excelfile_temporary"
     id = -1
 
+    '''
     @staticmethod
     def load(list):
         return [ExcelFile(**data) for data in list]
+    '''
 
     @staticmethod
     def toDictExcelFiles(names):
@@ -1213,20 +1223,34 @@ class ExcelFile:
         self.enable_sheet = 0
 
         # private params
-        self.tmp_filename = os.path.abspath(os.path.join(
-            ExcelFile.Temporary(),
-            str(self.id) + os.path.splitext(self.filename)[1]
-        ))
+        self.tmp_filename = ""
+
+        self.setFilename(filename)
+
         self.workbook = None
 
         self.save_attrs = ['filename', 'password', 'enable_sheet']
 
     def __del__(self):
+        self.discard()
+
+    def discard(self):
         try:
             self.workbook.Close(False)
         except:
             pass
         tryRemoveFile(self.tmp_filename)
+
+    def setFilename(self, filename):
+        self.filename = filename
+        self.setTmpFilename()
+
+    def setTmpFilename(self):
+        self.discard()
+        self.tmp_filename = os.path.abspath(os.path.join(
+            ExcelFile.Temporary(),
+            str(self.id) + os.path.splitext(self.filename)[1]
+        ))
 
     @property
     def enable_sheet_name(self):
@@ -1249,7 +1273,9 @@ class ExcelFile:
     def reloadfile(self):
         try:
             tryRemoveFile(self.tmp_filename)
+            log('remove - '+ self.tmp_filename + ' : ', not os.path.exists(self.tmp_filename))
             shutil.copyfile(self.filename, self.tmp_filename)
+            log('copy - '+ self.tmp_filename + ' : ', os.path.exists(self.tmp_filename))
         except Exception as e:
             print("Error : cannot copy file - ", self.filename, e)
             return False
@@ -1259,8 +1285,8 @@ class ExcelFile:
         ExcelFile.loadExcel()
         try:
             self.workbook.Close(False)
-        except:
-            pass
+        except Exception as e:
+            print("failed to close workbook - ", e)
         try:
             self.workbook = ExcelFile.excel.Workbooks.Open(
                 self.tmp_filename,
@@ -1279,7 +1305,6 @@ class ExcelFile:
         return True
 
     def reloadSheets(self):
-        self.workbook = None
         if not self.reloadfile() or not self.reloadWorkbook():
             log("faild reload")
             self.sheets = []
