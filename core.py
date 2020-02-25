@@ -108,6 +108,8 @@ class View:
         self.on_change_pdflistop_sort = []
         self.on_change_setting_sheet = []
 
+        self.on_change_setting_genpdf = []
+
         self.on_close_window = []
 
         self.createGUI()
@@ -126,6 +128,7 @@ class View:
         self.setting_output_button['command'] = self.push_setting_output_button
         self.genpdf_button['command'] = self.push_genpdf_button
 
+
         self.projectlist.bind('<<ListboxSelect>>', self.select_projectlist)
         self.namelist.bind('<<ListboxSelect>>', self.select_namelist)
         self.pdflist.bind('<<ListboxSelect>>', self.select_pdflist)
@@ -134,6 +137,8 @@ class View:
         self.namelistop_sort.bind('<<ComboboxSelected>>', self.change_namelistop_sort)
         self.pdflistop_sort.bind('<<ComboboxSelected>>', self.change_pdflistop_sort)
         self.setting_sheet.bind('<<ComboboxSelected>>', self.change_setting_sheet)
+
+        self.setting_genpdf['command'] = self.change_setting_genpdf
 
     def createGUI(self):
         # frames
@@ -444,7 +449,7 @@ class View:
         self.setting_output.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         #button
-        self.projectlistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.projectlistop_new.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.projectlistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.addbutton.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.namelistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
@@ -452,6 +457,7 @@ class View:
         self.pdflistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.edit_save.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_input_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_sheet_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_output_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.genpdf_button.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
@@ -464,6 +470,7 @@ class View:
         self.projectlistop_sort.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.namelistop_sort.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.pdflistop_sort.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_sheet.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         #checkbox
         self.setting_genpdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
@@ -541,6 +548,10 @@ class View:
     def change_setting_sheet(self, event):
         for func in self.on_change_setting_sheet:
             func(event)
+
+    def change_setting_genpdf(self):
+        for func in self.on_change_setting_genpdf:
+            func()
 
     def close_window(self):
         for func in self.on_close_window:
@@ -639,6 +650,8 @@ class Controller:
         self.view.on_change_pdflistop_sort = [self.updateData, self.change_pdflistop_sort, self.updateView]
         self.view.on_change_setting_sheet = [self.updateData, self.change_setting_sheet, self.updateView]
 
+        self.view.on_change_setting_genpdf = [self.updateData, self.change_setting_genpdf, self.updateView]
+
         self.view.on_close_window = [self.updateData, self.close_window]
         # params initialize
         self.loadData()
@@ -646,7 +659,7 @@ class Controller:
 
     @property
     def project_list(self):
-        return Project.getProjectList(self.projects)
+        return Project.getProjectList(self.projects, self.current_project)
 
     @property
     def name_list(self):
@@ -953,6 +966,9 @@ class Controller:
     def change_setting_sheet(self, event):
         log("change_setting_sheet", self.sheet_list)
 
+    def change_setting_genpdf(self):
+        log("change_setting_genpdf")
+
     def close_window(self):
         log("close_window")
         self.exportData()
@@ -967,9 +983,9 @@ class Project:
         return [project.toDict() for project in projects]
 
     @staticmethod
-    def getProjectList(projects):
+    def getProjectList(projects, current_project=None):
         list = [project for project in sorted(projects, key=lambda ins : ins.list_index)]
-        return [project.name for project in list]
+        return [project.toStr(project is current_project) for project in list]
 
     @staticmethod
     def sort(projects, project_sort="降順"):
@@ -1039,8 +1055,11 @@ class Project:
         data['input_file'] = self.input_file.toDict()
         return data
 
-    def toStr(self):
-        return self.name
+    def toStr(self, isEdit=False):
+        name = "有効 " if self.genpdf else "　　 "
+        name += "編集中 " if isEdit else "　　　 "
+        name += self.name
+        return name
 
     def genPDF(self, infofunc=None):
         pdflist = Name.getPdfGroup(self.name_list)
