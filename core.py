@@ -34,6 +34,10 @@ class View:
         # info data
         self.info_data = tk.StringVar()
 
+        # textbox data
+        self.edit_pdfname_data = tk.StringVar()
+        self.edit_zipname_data = tk.StringVar()
+
         # list data
         self.projectlist_data = tk.StringVar()
         self.namelist_data = tk.StringVar()
@@ -47,6 +51,8 @@ class View:
         self.setting_sheet_data = tk.StringVar()
 
         # checkbox data
+        self.edit_default_pdf_data = tk.BooleanVar()
+        self.edit_default_zip_data = tk.BooleanVar()
         self.setting_genpdf_data = tk.BooleanVar()
 
         # text box
@@ -86,6 +92,11 @@ class View:
         self.pdflistop_sort = None
         self.setting_sheet = None
 
+        # checkbox
+        self.edit_default_pdf = None
+        self.edit_default_zip = None
+        self.setting_genpdf = None
+
         # listner func
         self.on_push_projectlistop_new = []
         self.on_push_projectlistop_trash = []
@@ -108,6 +119,8 @@ class View:
         self.on_change_pdflistop_sort = []
         self.on_change_setting_sheet = []
 
+        self.on_change_edit_default_pdf = []
+        self.on_change_edit_default_zip = []
         self.on_change_setting_genpdf = []
 
         self.on_close_window = []
@@ -115,7 +128,9 @@ class View:
         self.createGUI()
 
         # set listener
+        # close window listener
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)
+        # button listener
         self.projectlistop_new['command'] = self.push_projectlistop_new
         self.projectlistop_trash['command'] = self.push_projectlistop_trash
         self.addbutton['command'] = self.push_addbutton
@@ -127,17 +142,18 @@ class View:
         self.setting_sheet_button['command'] = self.push_setting_sheet_button
         self.setting_output_button['command'] = self.push_setting_output_button
         self.genpdf_button['command'] = self.push_genpdf_button
-
-
+        # listbox changed listner
         self.projectlist.bind('<<ListboxSelect>>', self.select_projectlist)
         self.namelist.bind('<<ListboxSelect>>', self.select_namelist)
         self.pdflist.bind('<<ListboxSelect>>', self.select_pdflist)
-
+        # combobox selected listener
         self.projectlistop_sort.bind('<<ComboboxSelected>>', self.change_projectlistop_sort)
         self.namelistop_sort.bind('<<ComboboxSelected>>', self.change_namelistop_sort)
         self.pdflistop_sort.bind('<<ComboboxSelected>>', self.change_pdflistop_sort)
         self.setting_sheet.bind('<<ComboboxSelected>>', self.change_setting_sheet)
-
+        # checkbox changed listener
+        self.edit_default_pdf['command'] = self.change_edit_default_pdf
+        self.edit_default_zip['command'] = self.change_edit_default_zip
         self.setting_genpdf['command'] = self.change_setting_genpdf
 
     def createGUI(self):
@@ -312,10 +328,12 @@ class View:
         self.edit_zippass = ttk.Entry(self.edit_frame)
         # pdf filename
         self.edit_pdfname_label = ttk.Label(self.edit_frame, text="PDFファイル名：")
-        self.edit_pdfname = ttk.Entry(self.edit_frame)
+        self.edit_pdfname = ttk.Entry(self.edit_frame, textvariable=self.edit_pdfname_data)
+        self.edit_default_pdf = ttk.Checkbutton(self.edit_frame, text="デフォルトのファイル名を使用", variable=self.edit_default_pdf_data)
         # zip filename
         self.edit_zipname_label = ttk.Label(self.edit_frame, text="ZIPファイル名：")
-        self.edit_zipname = ttk.Entry(self.edit_frame)
+        self.edit_zipname = ttk.Entry(self.edit_frame, textvariable=self.edit_zipname_data)
+        self.edit_default_zip = ttk.Checkbutton(self.edit_frame, text="デフォルトのファイル名を使用", variable=self.edit_default_zip_data)
         # save button
         self.edit_save = ttk.Button(self.edit_frame, text="変更を保存")
 
@@ -329,9 +347,11 @@ class View:
         self.edit_zippass.grid(column=1, row=3, sticky=tk.EW)
         self.edit_pdfname_label.grid(column=0, row=4, sticky=tk.E)
         self.edit_pdfname.grid(column=1, row=4, sticky=tk.EW)
-        self.edit_zipname_label.grid(column=0, row=5, sticky=tk.E)
-        self.edit_zipname.grid(column=1, row=5, sticky=tk.EW)
-        self.edit_save.grid(column=1, row=6, sticky=tk.E)
+        self.edit_default_pdf.grid(column=1, row=5, sticky=tk.E)
+        self.edit_zipname_label.grid(column=0, row=6, sticky=tk.E)
+        self.edit_zipname.grid(column=1, row=6, sticky=tk.EW)
+        self.edit_default_zip.grid(column=1, row=7, sticky=tk.E)
+        #self.edit_save.grid(column=1, row=8, sticky=tk.E)
 
         self.edit_frame.columnconfigure(1, weight=1)
 
@@ -409,16 +429,20 @@ class View:
         #ttk.Style().configure("B.TFrame", padding=6, relief="flat",  background="#0F0")
 
     def setEdit(self, name):
+        if not name:
+            return
         self.edit_name.delete(0, tk.END)
         self.edit_name.insert(tk.END, name.name)
         self.edit_pdfpass.delete(0, tk.END)
         self.edit_pdfpass.insert(tk.END, name.pdf_password or "")
         self.edit_zippass.delete(0, tk.END)
         self.edit_zippass.insert(tk.END, name.zip_password or "")
-        self.edit_pdfname.delete(0, tk.END)
-        self.edit_pdfname.insert(tk.END, name.pdf_filename or "")
-        self.edit_zipname.delete(0, tk.END)
-        self.edit_zipname.insert(tk.END, name.zip_filename or "")
+        self.edit_pdfname_data.set(name.pdf_filename or "")
+        self.edit_pdfname.configure(state=tk.DISABLED if name.is_default_pdf_filename else tk.NORMAL)
+        self.edit_default_pdf_data.set(name.is_default_pdf_filename)
+        self.edit_zipname_data.set(name.zip_filename or "")
+        self.edit_zipname.configure(state=tk.DISABLED if name.is_default_zip_filename else tk.NORMAL)
+        self.edit_default_zip_data.set(name.is_default_zip_filename)
 
     def setInfo(self, info):
         self.info_data.set(info)
@@ -473,6 +497,8 @@ class View:
         self.setting_sheet.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         #checkbox
+        self.edit_default_pdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.edit_default_zip.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_genpdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         self.window.update()
@@ -549,6 +575,14 @@ class View:
         for func in self.on_change_setting_sheet:
             func(event)
 
+    def change_edit_default_pdf(self):
+        for func in self.on_change_edit_default_pdf:
+            func()
+
+    def change_edit_default_zip(self):
+        for func in self.on_change_edit_default_zip:
+            func()
+
     def change_setting_genpdf(self):
         for func in self.on_change_setting_genpdf:
             func()
@@ -566,6 +600,15 @@ class View:
             "project_sort" : self.projectlistop_sort_data.get(),
             "name_sort" : self.namelistop_sort_data.get(),
             "pdf_sort" : self.pdflistop_sort_data.get(),
+            "edit_name" : Name(
+                name=self.edit_name.get(),
+                pdf_password=self.edit_pdfpass.get(),
+                zip_password=self.edit_zippass.get(),
+                _pdf_filename=self.edit_pdfname.get(),
+                _zip_filename=self.edit_zipname.get(),
+                is_default_pdf_filename=self.edit_default_pdf_data.get(),
+                is_default_zip_filename=self.edit_default_zip_data.get()
+            ),
             "input_file" : self.setting_input.get(),
             "sheet" : self.setting_sheet_data.get(),
             "output_file" : self.setting_output.get(),
@@ -583,10 +626,11 @@ class View:
             "pdf_list_selected" : self.pdflist.curselection(),
         }
 
-    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, input_file, sheet, output_file, sheet_list, offset, range, genpdf, project_list_selected, name_list_selected, pdf_list_selected):
+    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, edit_name, input_file, sheet, output_file, sheet_list, offset, range, genpdf, project_list_selected, name_list_selected, pdf_list_selected):
         self.projectlist['listvariable'] = tk.StringVar(value=project_list)
         self.namelist['listvariable'] = tk.StringVar(value=name_list)
         self.pdflist['listvariable'] = tk.StringVar(value=pdf_list)
+        self.setEdit(edit_name)
         self.setting_input.delete(0, tk.END)
         self.setting_input.insert(tk.END, input_file)
         self.setting_sheet['values'] = sheet_list
@@ -606,6 +650,65 @@ class View:
     def run(self):
         self.window.mainloop()
 
+class ResultView:
+    def __init__(self, app_window, projects):
+        self.window = tk.Toplevel(app_window)
+
+        self.window.title("EXCELtoPDF")
+        self.window.geometry("700x480")
+        self.window.iconbitmap(default='icon.ico')
+
+        self.projects = projects
+
+        self.createGUI()
+
+    def createGUI(self):
+        self.main_frame = ttk.Frame(self.window)
+        self.window_label = ttk.Label(self.main_frame, text="結果")
+        self.result_frame = ttk.Frame(self.main_frame, style="Table.TFrame")
+
+        self.main_frame.grid(column=0, row=0, sticky=tk.NSEW)
+        self.window_label.grid(column=0, row=0, sticky=tk.NSEW, padx=1, pady=1)
+        self.result_frame.grid(column=0, row=1, sticky=[tk.N, tk.EW], padx=5, pady=5)
+
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        self.result_frame.columnconfigure(3, weight=1)
+
+        row = 0
+        # header
+        ttk.Label(self.result_frame, text="プロジェクト名", style="Table.TLabel").grid(column=0, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.result_frame, text="名前", style="Table.TLabel").grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.result_frame, text="結果", style="Table.TLabel").grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.result_frame, text="備考", style="Table.TLabel").grid(column=3, row=row, sticky=tk.EW, padx=1, pady=1)
+        row += 1
+        # table
+        for project in self.projects:
+            if not project.genpdf:
+                continue
+
+            projectname = ttk.Label(self.result_frame, text=project.name, style="Table.TLabel")
+
+            pdf_group = Name.getPdfGroup(project.name_list)
+            projectname.grid(column=0, row=row, rowspan=len(pdf_group), sticky=tk.NSEW, padx=1, pady=1)
+
+            for name in pdf_group:
+                namename = ttk.Label(self.result_frame, text=name.name, style="Table.TLabel")
+                namesuccess = ttk.Label(self.result_frame, text="成功" if name.is_success else "失敗", style="Table.TLabel")
+                namemessage = ttk.Label(self.result_frame, text=name.error_message, style="Table.TLabel")
+
+                namename.grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+                namesuccess.grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+                namemessage.grid(column=3, row=row, sticky=tk.EW, padx=1, pady=1)
+                row += 1
+
+            row += 1
+
+        ttk.Style().configure("Table.TLabel", relief="flat", background="#fff")
+        ttk.Style().configure("Table.TFrame", relief="flat", background="#111")
+
 class Controller:
     def __init__(self, view):
         self.view = view
@@ -624,8 +727,8 @@ class Controller:
         self.current_name = None
 
         # attributes
-        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "input_file", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
-        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "input_file", "sheet_list", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "sheet_list", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
         self.save_attrs = ["projects", "project_sort", "name_sort", "pdf_sort"]
         #self.save_attrs = ["_name_list", "name_sort", "pdf_sort", "_input_file", "sheet", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
         # set listener
@@ -650,6 +753,8 @@ class Controller:
         self.view.on_change_pdflistop_sort = [self.updateData, self.change_pdflistop_sort, self.updateView]
         self.view.on_change_setting_sheet = [self.updateData, self.change_setting_sheet, self.updateView]
 
+        self.view.on_change_edit_default_pdf = [self.updateData, self.change_edit_default_pdf, self.updateView]
+        self.view.on_change_edit_default_zip = [self.updateData, self.change_edit_default_zip, self.updateView]
         self.view.on_change_setting_genpdf = [self.updateData, self.change_setting_genpdf, self.updateView]
 
         self.view.on_close_window = [self.updateData, self.close_window]
@@ -688,6 +793,40 @@ class Controller:
             return []
         else:
             return self.current_project.pdf_list
+
+    @property
+    def edit_name(self):
+        return self.current_name
+
+    @edit_name.setter
+    def edit_name(self, value):
+        if not self.current_name:
+            return
+        # check
+        if value.name == "" or value.name is None:
+            print("Error : invalid name")
+            return
+        if value.pdf_filename == "":
+            print("Error : invalid pdf_filename")
+            return
+        if value.zip_filename == "":
+            print("Error : invalid zip_filename")
+            return
+        # correct
+        value.pdf_password = value.pdf_password if value.pdf_password != "" else None
+        value.zip_password = value.zip_password if value.zip_password != "" else None
+        value.pdf_filename = value.pdf_filename if value.pdf_filename.endswith(".pdf") else value.pdf_filename + ".pdf"
+        value.zip_filename = value.zip_filename if value.zip_filename.endswith(".zip") else value.zip_filename + ".zip"
+        # set
+        self.current_name.name = value.name
+        self.current_name.pdf_password = value.pdf_password
+        self.current_name.zip_password = value.zip_password
+        if not self.current_name.is_default_pdf_filename and not value.is_default_pdf_filename or not self.current_name.is_default_pdf_filename and value.is_default_pdf_filename:
+            self.current_name.pdf_filename = value.pdf_filename
+        if not self.current_name.is_default_zip_filename and not value.is_default_zip_filename or not self.current_name.is_default_zip_filename and value.is_default_zip_filename:
+            self.current_name.zip_filename = value.zip_filename
+        self.current_name.is_default_pdf_filename = value.is_default_pdf_filename
+        self.current_name.is_default_zip_filename = value.is_default_zip_filename
 
     @property
     def input_file(self):
@@ -775,17 +914,22 @@ class Controller:
             self.current_project.genpdf = value
 
     def updateData(self, *arg):
+        # update paramater
         for key, value in self.view.getData().items():
             if key in self.updateData_attrs:
                 setattr(self, key, value)
+        # other update
         Project.sort(self.projects, self.project_sort)
         if self.current_project is not None:
             Name.sort(self.current_project.name_list, self.name_sort, self.pdf_sort)
+        Project.updateProjects(self.projects)
 
     def updateView(self, *arg):
+        # sort projects and names
         Project.sort(self.projects, self.project_sort)
         if self.current_project is not None:
             Name.sort(self.current_project.name_list, self.name_sort, self.pdf_sort)
+        # update
         self.view.setData(**{k : getattr(self, k) for k in self.updateView_attrs})
 
     def loadData(self, filepath="./userdata.dat"):
@@ -853,10 +997,13 @@ class Controller:
         if self.current_name is None:
             return
         log("push_edit_save")
+        '''
         name = self.view.edit_name.get()
         pdf_password = self.view.edit_pdfpass.get()
         zip_password = self.view.edit_zippass.get()
         pdf_filename = self.view.edit_pdfname.get()
+        is_default_pdf_filename = self.view.edit_default_pdf_data.get()
+        is_default_zip_filename = self.view.edit_default_zip_data.get()
         zip_filename = self.view.edit_zipname.get()
         # check
         if name == "" or name is None:
@@ -884,8 +1031,11 @@ class Controller:
         self.current_name.zip_password = zip_password
         self.current_name.pdf_filename = pdf_filename
         self.current_name.zip_filename = zip_filename
+        self.current_name.is_default_pdf_filename = is_default_pdf_filename
+        self.current_name.is_default_zip_filename = is_default_zip_filename
         self.view.setEdit(self.current_name)
         self.view.setInfo('「' + name + '」の変更内容を保存しました．')
+        '''
 
     def push_setting_input_button(self):
         log("push_setting_input_button")
@@ -938,6 +1088,8 @@ class Controller:
         else:
             self.view.setInfo('何らかの問題が発生しました．出力ファイルが欠損している可能性があります．')
 
+        window = ResultView(self.view.window, self.projects)
+
         self.view.disableGen()
 
     def select_projectlist(self, event):
@@ -955,7 +1107,6 @@ class Controller:
         selected = self.name_list_selected[0]
         editins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
         self.current_name = editins
-        self.view.setEdit(editins)
 
     def select_pdflist(self, event):
         if len(self.pdf_list_selected) is 0:
@@ -973,6 +1124,12 @@ class Controller:
 
     def change_setting_sheet(self, event):
         log("change_setting_sheet", self.sheet_list)
+
+    def change_edit_default_pdf(self):
+        log("change_edit_default_pdf")
+
+    def change_edit_default_zip(self):
+        log("change_edit_default_zip")
 
     def change_setting_genpdf(self):
         log("change_setting_genpdf")
@@ -994,6 +1151,11 @@ class Project:
     def getProjectList(projects, current_project=None):
         list = [project for project in sorted(projects, key=lambda ins : ins.list_index)]
         return [project.toStr(project is current_project) for project in list]
+
+    @staticmethod
+    def updateProjects(projects):
+        for project in projects:
+            project.updateNameList()
 
     @staticmethod
     def sort(projects, project_sort="降順"):
@@ -1046,10 +1208,14 @@ class Project:
         else:
             return '新規プロジェクト'
 
+    def updateNameList(self):
+        for name in self.name_list:
+            name.project = self
+
     def load(self, dict):
         for k, v in dict.items():
             if k == 'name_list':
-                value = Name.load(v)
+                value = Name.loadNames(v)
             elif k == 'input_file':
                 value = ExcelFile().load(v)
             else:
@@ -1077,13 +1243,12 @@ class Project:
 
 class Name:
     @staticmethod
-    def load(list):
-        return [Name(**data) for data in list]
+    def loadNames(list):
+        return [Name().load(data) for data in list]
 
     @staticmethod
     def toDictNames(names):
-        save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list', 'pdf_password', 'zip_password', 'pdf_filename', 'zip_filename']
-        return [{key : getattr(name, key) for key in save_attrs} for name in names]
+        return [name.toDict() for name in names]
 
     @staticmethod
     def getNameList(names):
@@ -1130,26 +1295,34 @@ class Name:
             name.is_success = False
 
     def __init__(self,
-        name,
+        name=None,
         name_list_index=None,
         pdf_list_index=None,
         in_pdf_list=None,
         pdf_password=None,
         zip_password=None,
-        pdf_filename=None,
-        zip_filename=None
+        _pdf_filename=None,
+        _zip_filename=None,
+        is_default_pdf_filename=True,
+        is_default_zip_filename=True
     ):
-        self.name = name
+        self.name = name or "新規ユーザー"
         self.name_list_index = name_list_index or -1
         self.pdf_list_index = pdf_list_index or -1
         self.in_pdf_list = in_pdf_list or False
         self.pdf_password = pdf_password
         self.zip_password = zip_password
-        self.pdf_filename = pdf_filename or "pdffile.pdf"
-        self.zip_filename = zip_filename or "zipfile.zip"
+        self._pdf_filename = _pdf_filename or "pdffile.pdf"
+        self._zip_filename = _zip_filename or "zipfile.zip"
+        self.is_default_pdf_filename = is_default_pdf_filename
+        self.is_default_zip_filename = is_default_zip_filename
+
+        self.save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list', 'pdf_password', 'zip_password', '_pdf_filename', '_zip_filename', 'is_default_pdf_filename', 'is_default_zip_filename']
 
         # non param
+        self.project = None
         self.is_success = False
+        self.error_message = ""
 
     def __repr__(self):
         s = ""
@@ -1162,6 +1335,37 @@ class Name:
         for k,v in Name.toDictNames([self])[0].items():
             s += str(k) + " : " + str(v) + ", "
         return s
+
+    @property
+    def pdf_filename(self):
+        if self.project and self.is_default_pdf_filename:
+            return self.name + self.project.input_file.enable_sheet + "明細.pdf"
+        else:
+            return self._pdf_filename
+
+    @pdf_filename.setter
+    def pdf_filename(self, value):
+        self._pdf_filename = value
+
+    @property
+    def zip_filename(self):
+        if self.project and self.is_default_zip_filename:
+            return self.name + self.project.input_file.enable_sheet + "明細.zip"
+        else:
+            return self._zip_filename
+
+    @zip_filename.setter
+    def zip_filename(self, value):
+        self._zip_filename = value
+
+    def load(self, dict):
+        for k, v in dict.items():
+            setattr(self, k, v)
+        return self
+
+    def toDict(self):
+        data = {x : getattr(self, x) for x in self.save_attrs}
+        return data
 
 class ExcelFile:
     excel = None
@@ -1348,6 +1552,7 @@ class ExcelFile:
                     # search name
                     result = sheet.UsedRange.Find(name.name)
                     if result is None:
+                        name.error_message = "名前が見つかりませんでした。"
                         continue
 
                     # calc range
@@ -1365,7 +1570,7 @@ class ExcelFile:
                     sheet.PageSetup.PrintArea = print_range
 
                     # save as pdf file
-                    rawpdffile = os.path.abspath(os.path.join(rawpdf_dir, name.name.replace(" ", "") + ".pdf"))
+                    rawpdffile = os.path.abspath(os.path.join(rawpdf_dir, name.pdf_filename))
                     if os.path.exists(rawpdffile):
                         os.remove(rawpdffile)
                     log("save : ", rawpdffile, ", range : ", print_range)
@@ -1374,7 +1579,7 @@ class ExcelFile:
                     sheet.ExportAsFixedFormat(0, rawpdffile)
 
                     # set password to pdf file
-                    encryptfile = os.path.abspath(os.path.join(encrypt_dir, name.name.replace(" ", "") + ".pdf"))
+                    encryptfile = os.path.abspath(os.path.join(encrypt_dir, name.pdf_filename))
                     if os.path.exists(encryptfile):
                         os.remove(encryptfile)
                     log("save : ", encryptfile)
@@ -1390,10 +1595,11 @@ class ExcelFile:
                     encryptpdf.close()
 
                     # create zip file
-                    zip_dir = os.path.abspath(os.path.join(save_dir, name.name))
+                    #zip_dir = os.path.abspath(os.path.join(save_dir, name.name))
+                    zip_dir = save_dir
                     if not os.path.isdir(zip_dir):
                         os.mkdir(zip_dir)
-                    zipfile = os.path.abspath(os.path.join(zip_dir, name.zip_filename.replace(" ", "")))
+                    zipfile = os.path.abspath(os.path.join(zip_dir, name.zip_filename))
                     if os.path.exists(zipfile):
                         os.remove(zipfile)
                     log("save : ", zipfile)
@@ -1403,11 +1609,13 @@ class ExcelFile:
                         encryptfile.encode('cp932'), '', zipfile.encode('cp932'), name.zip_password or "", int(0)
                     )
                     name.is_success = True
+                    name.error_message = ""
                     if infofunc:
                         infofunc('「' + name.name + '」のファイル生成を完了しました．')
                 except:
                     if infofunc:
                         infofunc('「' + name.name + '」のファイル生成に失敗しました．')
+                    name.error_message = "ファイル生成中にエラーが発生しました。"
                     is_success &= False
         except Exception as e:
             print('Error : cannot save as pdf.', e)
