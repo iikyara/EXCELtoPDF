@@ -63,6 +63,7 @@ class View:
         self.edit_pdfname = None
         self.edit_zipname = None
         self.setting_input = None
+        self.setting_input_password = None
         self.setting_offset_column = None
         self.setting_offset_row = None
         self.setting_range_column = None
@@ -363,6 +364,8 @@ class View:
         self.setting_input_frame = ttk.Frame(self.setting_frame)
         self.setting_input = ttk.Entry(self.setting_input_frame)
         self.setting_input_button = ttk.Button(self.setting_input_frame, text="参照", width=5)
+        self.setting_input_password_label = ttk.Label(self.setting_frame, text="パスワード：")
+        self.setting_input_password = ttk.Entry(self.setting_frame)
         # sheet select
         self.setting_sheet_label = ttk.Label(self.setting_frame, text="対象シート：")
         self.setting_sheet_frame = ttk.Frame(self.setting_frame)
@@ -395,26 +398,28 @@ class View:
         self.setting_input_frame.grid(column=1, row=1, sticky=tk.EW)
         self.setting_input.grid(column=0, row=0, sticky=tk.EW)
         self.setting_input_button.grid(column=1, row=0, sticky=tk.E)
-        self.setting_sheet_label.grid(column=0, row=2, sticky=tk.E)
-        self.setting_sheet_frame.grid(column=1, row=2, sticky=tk.EW)
+        self.setting_input_password_label.grid(column=0, row=2, sticky=tk.E)
+        self.setting_input_password.grid(column=1, row=2, sticky=tk.EW)
+        self.setting_sheet_label.grid(column=0, row=3, sticky=tk.E)
+        self.setting_sheet_frame.grid(column=1, row=3, sticky=tk.EW)
         self.setting_sheet.grid(column=0, row=0, sticky=tk.EW)
         self.setting_sheet_button.grid(column=1, row=0, sticky=tk.E)
-        self.setting_offset_label.grid(column=0, row=3, sticky=tk.E)
-        self.setting_offset_frame.grid(column=1, row=3, sticky=tk.EW)
+        self.setting_offset_label.grid(column=0, row=4, sticky=tk.E)
+        self.setting_offset_frame.grid(column=1, row=4, sticky=tk.EW)
         self.setting_offset_column.grid(column=0, row=0)
         self.setting_offset_middle.grid(column=1, row=0)
         self.setting_offset_row.grid(column=2, row=0)
-        self.setting_range_label.grid(column=0, row=4, sticky=tk.E)
-        self.setting_range_frame.grid(column=1, row=4, sticky=tk.EW)
+        self.setting_range_label.grid(column=0, row=5, sticky=tk.E)
+        self.setting_range_frame.grid(column=1, row=5, sticky=tk.EW)
         self.setting_range_column.grid(column=0, row=0)
         self.setting_range_middle.grid(column=1, row=0)
         self.setting_range_row.grid(column=2, row=0)
-        self.setting_output_label.grid(column=0, row=5, sticky=tk.E)
-        self.setting_output_frame.grid(column=1, row=5, sticky=tk.EW)
+        self.setting_output_label.grid(column=0, row=6, sticky=tk.E)
+        self.setting_output_frame.grid(column=1, row=6, sticky=tk.EW)
         self.setting_output.grid(column=0, row=0, sticky=tk.EW)
         self.setting_output_button.grid(column=1, row=0, sticky=tk.E)
-        self.setting_genpdf_label.grid(column=0, row=6, sticky=tk.E)
-        self.setting_genpdf.grid(column=1, row=6, sticky=tk.EW)
+        self.setting_genpdf_label.grid(column=0, row=7, sticky=tk.E)
+        self.setting_genpdf.grid(column=1, row=7, sticky=tk.EW)
 
         self.setting_frame.columnconfigure(1, weight=1)
         self.setting_input_frame.columnconfigure(0, weight=1)
@@ -466,6 +471,7 @@ class View:
         self.edit_pdfname.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.edit_zipname.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_input.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        self.setting_input_password.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_offset_column.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_offset_row.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.setting_range_column.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
@@ -610,6 +616,7 @@ class View:
                 is_default_zip_filename=self.edit_default_zip_data.get()
             ),
             "input_file" : self.setting_input.get(),
+            "input_password" : self.setting_input_password.get(),
             "sheet" : self.setting_sheet_data.get(),
             "output_file" : self.setting_output.get(),
             "offset" : (
@@ -626,13 +633,15 @@ class View:
             "pdf_list_selected" : self.pdflist.curselection(),
         }
 
-    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, edit_name, input_file, sheet, output_file, sheet_list, offset, range, genpdf, project_list_selected, name_list_selected, pdf_list_selected):
+    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, edit_name, input_file, input_password, sheet, output_file, sheet_list, offset, range, genpdf, project_list_selected, name_list_selected, pdf_list_selected):
         self.projectlist['listvariable'] = tk.StringVar(value=project_list)
         self.namelist['listvariable'] = tk.StringVar(value=name_list)
         self.pdflist['listvariable'] = tk.StringVar(value=pdf_list)
         self.setEdit(edit_name)
         self.setting_input.delete(0, tk.END)
         self.setting_input.insert(tk.END, input_file)
+        self.setting_input_password.delete(0, tk.END)
+        self.setting_input_password.insert(tk.END, input_password)
         self.setting_sheet['values'] = sheet_list
         self.setting_sheet_data.set(sheet)
         self.setting_output.delete(0, tk.END)
@@ -727,8 +736,8 @@ class Controller:
         self.current_name = None
 
         # attributes
-        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
-        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "sheet_list", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet_list", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
         self.save_attrs = ["projects", "project_sort", "name_sort", "pdf_sort"]
         #self.save_attrs = ["_name_list", "name_sort", "pdf_sort", "_input_file", "sheet", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
         # set listener
@@ -841,6 +850,18 @@ class Controller:
             self.current_project.input_file.setFilename(value)
 
     @property
+    def input_password(self):
+        if self.current_project is None:
+            return ""
+        else:
+            return self.current_project.input_file.password
+
+    @input_password.setter
+    def input_password(self, value):
+        if self.current_project is not None:
+            self.current_project.input_file.password = value
+
+    @property
     def sheet_list(self):
         if self.current_project is None:
             return []
@@ -853,16 +874,14 @@ class Controller:
             return ""
         else:
             if len(self.current_project.input_file.sheets) == 0:
-                return "ファイルが存在しません"
+                return "読み込み失敗"
             else:
-                #return self.current_project.input_file.sheets[self.current_project.input_file.enable_sheet]
                 return self.current_project.input_file.enable_sheet
 
     @sheet.setter
     def sheet(self, value):
         if self.current_project is not None:
             if value in self.current_project.input_file.sheets:
-                #self.current_project.input_file.enable_sheet = self.current_project.input_file.sheets.index(value)
                 self.current_project.input_file.enable_sheet = value
 
     @property
@@ -997,45 +1016,6 @@ class Controller:
         if self.current_name is None:
             return
         log("push_edit_save")
-        '''
-        name = self.view.edit_name.get()
-        pdf_password = self.view.edit_pdfpass.get()
-        zip_password = self.view.edit_zippass.get()
-        pdf_filename = self.view.edit_pdfname.get()
-        is_default_pdf_filename = self.view.edit_default_pdf_data.get()
-        is_default_zip_filename = self.view.edit_default_zip_data.get()
-        zip_filename = self.view.edit_zipname.get()
-        # check
-        if name == "" or name is None:
-            print("Error : invalid name")
-            self.view.setInfo('名前を入力してください．')
-            return
-        if pdf_filename == "":
-            print("Error : invalid pdf_filename")
-            self.view.setInfo('PDFファイル名を入力してください．')
-            return
-        if zip_filename == "":
-            print("Error : invalid zip_filename")
-            self.view.setInfo('ZIPファイル名を入力してください．')
-            return
-        # correct
-        pdf_password = pdf_password if pdf_password != "" else None
-        zip_password = zip_password if zip_password != "" else None
-        pdf_filename = pdf_filename if pdf_filename.endswith(".pdf") else pdf_filename + ".pdf"
-        zip_filename = zip_filename if zip_filename.endswith(".zip") else zip_filename + ".zip"
-        # save data
-        #selected = self.name_list_selected[0]
-        #editins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
-        self.current_name.name = name
-        self.current_name.pdf_password = pdf_password
-        self.current_name.zip_password = zip_password
-        self.current_name.pdf_filename = pdf_filename
-        self.current_name.zip_filename = zip_filename
-        self.current_name.is_default_pdf_filename = is_default_pdf_filename
-        self.current_name.is_default_zip_filename = is_default_zip_filename
-        self.view.setEdit(self.current_name)
-        self.view.setInfo('「' + name + '」の変更内容を保存しました．')
-        '''
 
     def push_setting_input_button(self):
         log("push_setting_input_button")
@@ -1058,7 +1038,7 @@ class Controller:
         self.view.setInfo(self.current_project.input_file.filename + 'をロード中')
         self.current_project.input_file.reloadSheets()
         if not self.current_project.input_file.reloadSheets():
-            self.view.setInfo(self.current_project.input_file.filename + 'が見つかりませんでした．')
+            self.view.setInfo(self.current_project.input_file.filename + 'というファイルが存在しないか，パスワードが間違っています．')
         else:
             self.view.setInfo(self.current_project.input_file.filename + 'を正常に読み込みました．')
 
@@ -1494,8 +1474,9 @@ class ExcelFile:
         try:
             self.workbook = ExcelFile.excel.Workbooks.Open(
                 self.tmp_filename,
-                None,
+                False,
                 True,
+                None,
                 Password=self.password
             )
             ExcelFile.excel.Visible = False
