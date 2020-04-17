@@ -28,7 +28,7 @@ class View:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("EXCELtoPDF")
-        self.window.geometry("700x480")
+        self.window.geometry("1000x480")
         self.window.iconbitmap(default='icon.ico')
 
         # info data
@@ -167,12 +167,13 @@ class View:
         self.main_frame.grid(column=0, row=0, sticky=tk.NSEW)
         self.project_frame.grid(column=0, row=0, sticky=tk.NSEW, padx=1, pady=1)
         self.left_frame.grid(column=1, row=0, sticky=tk.NSEW, padx=1, pady=1)
-        self.right_frame.grid(column=2, row=0, sticky=tk.NS, padx=1, pady=1)
+        self.right_frame.grid(column=2, row=0, sticky=tk.NSEW, padx=1, pady=1)
 
         self.window.columnconfigure(0, weight=1)
         self.window.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=1)
+        #self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.columnconfigure(2, weight=1)
         self.main_frame.rowconfigure(0, weight=1)
         self.project_frame.columnconfigure(0, weight=1)
         self.project_frame.rowconfigure(1, weight=1)
@@ -424,6 +425,7 @@ class View:
         self.setting_frame.columnconfigure(1, weight=1)
         self.setting_input_frame.columnconfigure(0, weight=1)
         self.setting_output_frame.columnconfigure(0, weight=1)
+        self.setting_sheet_frame.columnconfigure(0, weight=1)
 
         # generate pdf button
         self.genpdf_button = ttk.Button(self.right_frame, text="PDFを出力する")
@@ -435,6 +437,15 @@ class View:
 
     def setEdit(self, name):
         if not name:
+            self.edit_name.delete(0, tk.END)
+            self.edit_pdfpass.delete(0, tk.END)
+            self.edit_zippass.delete(0, tk.END)
+            self.edit_pdfname_data.set("")
+            self.edit_pdfname.configure(state=tk.NORMAL)
+            self.edit_default_pdf_data.set(False)
+            self.edit_zipname_data.set("")
+            self.edit_zipname.configure(state=tk.NORMAL)
+            self.edit_default_zip_data.set(False)
             return
         self.edit_name.delete(0, tk.END)
         self.edit_name.insert(tk.END, name.name)
@@ -1079,6 +1090,7 @@ class Controller:
         selected = self.project_list_selected[0]
         editins = [ins for ins in self.projects if ins.list_index is selected][0]
         self.current_project = editins
+        self.current_name = None
 
     def select_namelist(self, event):
         if len(self.name_list_selected) is 0:
@@ -1319,7 +1331,8 @@ class Name:
     @property
     def pdf_filename(self):
         if self.project and self.is_default_pdf_filename:
-            return self.name + self.project.input_file.enable_sheet + "明細.pdf"
+            #return self.name + self.project.input_file.enable_sheet + "明細.pdf"
+            return self.project.input_file.enable_sheet + "（" + self.name + "）.pdf"
         else:
             return self._pdf_filename
 
@@ -1330,7 +1343,8 @@ class Name:
     @property
     def zip_filename(self):
         if self.project and self.is_default_zip_filename:
-            return self.name + self.project.input_file.enable_sheet + "明細.zip"
+            #return self.name + self.project.input_file.enable_sheet + "明細.zip"
+            return self.project.input_file.enable_sheet + "（" + self.name + "）.zip"
         else:
             return self._zip_filename
 
