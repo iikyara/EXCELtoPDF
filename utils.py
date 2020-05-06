@@ -1,4 +1,5 @@
 import os
+import re
 
 DEBUG = True
 def log(*arg, **darg):
@@ -25,6 +26,9 @@ def tryRemoveFile(filename):
         os.remove(filename)
     except Exception as e:
         print('tryRemoveFile - ', e)
+
+def searchMonth(str):
+    return (re.compile(r'([0-9]+)月').findall(str) or [''])[0]
 
 def getSheetsName(xlsx_files, infofunc=None):
     excel = None
