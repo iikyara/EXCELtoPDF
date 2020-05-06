@@ -1,6 +1,8 @@
 # coding: utf-8
 import sys
 import os
+import re
+import datetime
 import shutil
 import json
 import csv
@@ -13,7 +15,9 @@ import tkinter as tk
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 from tkinter import ttk
+from tkinter_extend import *
 from utils import *
+from aipo_message import *
 
 class App:
     def __init__(self):
@@ -37,6 +41,7 @@ class View:
         # textbox data
         self.edit_pdfname_data = tk.StringVar()
         self.edit_zipname_data = tk.StringVar()
+        self.edit_aipo_id_data = tk.StringVar()
 
         # list data
         self.projectlist_data = tk.StringVar()
@@ -53,6 +58,7 @@ class View:
         # checkbox data
         self.edit_default_pdf_data = tk.BooleanVar()
         self.edit_default_zip_data = tk.BooleanVar()
+        self.edit_send_aipo_data = tk.BooleanVar()
         self.setting_genpdf_data = tk.BooleanVar()
 
         # text box
@@ -62,6 +68,7 @@ class View:
         self.edit_zippass = None
         self.edit_pdfname = None
         self.edit_zipname = None
+        self.edit_aipo_id = None
         self.setting_input = None
         self.setting_input_password = None
         self.setting_offset_column = None
@@ -82,6 +89,7 @@ class View:
         self.setting_sheet_button = None
         self.setting_output_button = None
         self.genpdf_button = None
+        self.sendaipo_button = None
 
         # list
         self.projectlist = None
@@ -96,6 +104,7 @@ class View:
         # checkbox
         self.edit_default_pdf = None
         self.edit_default_zip = None
+        self.edit_send_aipo = None
         self.setting_genpdf = None
 
         # listner func
@@ -110,6 +119,7 @@ class View:
         self.on_push_setting_sheet_button = []
         self.on_push_setting_output_button = []
         self.on_push_genpdf_button = []
+        self.on_push_sendaipo_button = []
 
         self.on_select_projectlist = []
         self.on_select_namelist = []
@@ -122,10 +132,14 @@ class View:
 
         self.on_change_edit_default_pdf = []
         self.on_change_edit_default_zip = []
+        self.on_change_edit_send_aipo = []
         self.on_change_setting_genpdf = []
+
+        self.on_change_edit_aipo_id = []
 
         self.on_close_window = []
 
+        # create GUI
         self.createGUI()
 
         # set listener
@@ -143,6 +157,7 @@ class View:
         self.setting_sheet_button['command'] = self.push_setting_sheet_button
         self.setting_output_button['command'] = self.push_setting_output_button
         self.genpdf_button['command'] = self.push_genpdf_button
+        self.sendaipo_button['command'] = self.push_sendaipo_button
         # listbox changed listner
         self.projectlist.bind('<<ListboxSelect>>', self.select_projectlist)
         self.namelist.bind('<<ListboxSelect>>', self.select_namelist)
@@ -155,7 +170,10 @@ class View:
         # checkbox changed listener
         self.edit_default_pdf['command'] = self.change_edit_default_pdf
         self.edit_default_zip['command'] = self.change_edit_default_zip
+        self.edit_send_aipo['command'] = self.change_edit_send_aipo
         self.setting_genpdf['command'] = self.change_setting_genpdf
+        # entry widget listener
+        self.edit_aipo_id.bind('<KeyRelease>', self.change_edit_aipo_id)
 
     def createGUI(self):
         # frames
@@ -336,6 +354,12 @@ class View:
         self.edit_zipname_label = ttk.Label(self.edit_frame, text="ZIPファイル名：")
         self.edit_zipname = ttk.Entry(self.edit_frame, textvariable=self.edit_zipname_data)
         self.edit_default_zip = ttk.Checkbutton(self.edit_frame, text="デフォルトのファイル名を使用", variable=self.edit_default_zip_data)
+        # aipo id
+        self.edit_aipo_id_label = ttk.Label(self.edit_frame, text="Aipo ID：")
+        self.edit_aipo_id = ttk.Entry(self.edit_frame, textvariable=self.edit_aipo_id_data)
+        # aipo check
+        self.edit_send_aipo_label = ttk.Label(self.edit_frame, text="Aipoでメッセージを送信：")
+        self.edit_send_aipo = ttk.Checkbutton(self.edit_frame, variable=self.edit_send_aipo_data)
         # save button
         self.edit_save = ttk.Button(self.edit_frame, text="変更を保存")
 
@@ -353,6 +377,10 @@ class View:
         self.edit_zipname_label.grid(column=0, row=6, sticky=tk.E)
         self.edit_zipname.grid(column=1, row=6, sticky=tk.EW)
         self.edit_default_zip.grid(column=1, row=7, sticky=tk.E)
+        self.edit_aipo_id_label.grid(column=0, row=8, sticky=tk.E)
+        self.edit_aipo_id.grid(column=1, row=8, sticky=tk.EW)
+        self.edit_send_aipo_label.grid(column=0, row=9, sticky=tk.E)
+        self.edit_send_aipo.grid(column=1, row=9, sticky=tk.W)
         #self.edit_save.grid(column=1, row=8, sticky=tk.E)
 
         self.edit_frame.columnconfigure(1, weight=1)
@@ -427,9 +455,21 @@ class View:
         self.setting_output_frame.columnconfigure(0, weight=1)
         self.setting_sheet_frame.columnconfigure(0, weight=1)
 
+        # right buttom button frame
+        self.right_buttom_frame = ttk.Frame(self.right_frame)
+
         # generate pdf button
-        self.genpdf_button = ttk.Button(self.right_frame, text="PDFを出力する")
-        self.genpdf_button.grid(column=0, row=2, sticky=tk.NSEW)
+        self.genpdf_button = ttk.Button(self.right_buttom_frame, text="PDFを出力する")
+        # send aipo button
+        self.sendaipo_button = ttk.Button(self.right_buttom_frame, text="Aipoでメッセージを送信")
+
+        self.right_buttom_frame.grid(column=0, row=2, sticky=tk.NSEW)
+        self.genpdf_button.grid(column=0, row=0, sticky=tk.NSEW)
+        self.sendaipo_button.grid(column=0, row=1, sticky=tk.NSEW)
+
+        self.right_buttom_frame.rowconfigure(0, weight=1)
+        self.right_buttom_frame.rowconfigure(1, weight=1)
+        self.right_buttom_frame.columnconfigure(0, weight=1)
 
         ttk.Style().configure("Main.TFrame", padding=6, relief="flat",   background="#000")
         #ttk.Style().configure("A.TFrame", padding=6, relief="flat",   background="#F00")
@@ -446,6 +486,8 @@ class View:
             self.edit_zipname_data.set("")
             self.edit_zipname.configure(state=tk.NORMAL)
             self.edit_default_zip_data.set(False)
+            self.edit_aipo_id.delete(0, tk.END)
+            self.edit_send_aipo_data.set(False)
             return
         self.edit_name.delete(0, tk.END)
         self.edit_name.insert(tk.END, name.name)
@@ -459,6 +501,9 @@ class View:
         self.edit_zipname_data.set(name.zip_filename or "")
         self.edit_zipname.configure(state=tk.DISABLED if name.is_default_zip_filename else tk.NORMAL)
         self.edit_default_zip_data.set(name.is_default_zip_filename)
+        self.edit_aipo_id.delete(0, tk.END)
+        self.edit_aipo_id.insert(tk.END, "" if not name.aipo_id or name.aipo_id == -1 else name.aipo_id)
+        self.edit_send_aipo_data.set(name.send_aipo)
 
     def setInfo(self, info):
         self.info_data.set(info)
@@ -564,6 +609,10 @@ class View:
         for func in self.on_push_genpdf_button:
             func()
 
+    def push_sendaipo_button(self):
+        for func in self.on_push_sendaipo_button:
+            func()
+
     def select_projectlist(self, event):
         for func in self.on_select_projectlist:
             func(event)
@@ -600,9 +649,17 @@ class View:
         for func in self.on_change_edit_default_zip:
             func()
 
+    def change_edit_send_aipo(self):
+        for func in self.on_change_edit_send_aipo:
+            func()
+
     def change_setting_genpdf(self):
         for func in self.on_change_setting_genpdf:
             func()
+
+    def change_edit_aipo_id(self, event):
+        for func in self.on_change_edit_aipo_id:
+            func(event)
 
     def close_window(self):
         for func in self.on_close_window:
@@ -624,7 +681,9 @@ class View:
                 _pdf_filename=self.edit_pdfname.get(),
                 _zip_filename=self.edit_zipname.get(),
                 is_default_pdf_filename=self.edit_default_pdf_data.get(),
-                is_default_zip_filename=self.edit_default_zip_data.get()
+                is_default_zip_filename=self.edit_default_zip_data.get(),
+                aipo_id=self.edit_aipo_id.get(),
+                send_aipo=self.edit_send_aipo_data.get()
             ),
             "input_file" : self.setting_input.get(),
             "input_password" : self.setting_input_password.get(),
@@ -674,7 +733,7 @@ class ResultView:
     def __init__(self, app_window, projects):
         self.window = tk.Toplevel(app_window)
 
-        self.window.title("EXCELtoPDF")
+        self.window.title("EXCELtoPDF - 結果")
         self.window.geometry("700x480")
         self.window.iconbitmap(default='icon.ico')
 
@@ -729,6 +788,243 @@ class ResultView:
         ttk.Style().configure("Table.TLabel", relief="flat", background="#fff")
         ttk.Style().configure("Table.TFrame", relief="flat", background="#111")
 
+class SendSettingView:
+    def __init__(self, app_window, project):
+        self.window = tk.Toplevel(app_window)
+
+        self.window.title("EXCELtoPDF - Aipoへメッセージを送信")
+        self.window.geometry("1000x480")
+        self.window.iconbitmap(default='icon.ico')
+
+        self.project = project
+
+        # text area
+        self.sendmsg = None
+
+        # button
+        self.cancel_button = None
+        self.send_button = None
+
+        # listner func
+        self.on_push_cancel_button = []
+        self.on_push_send_button = []
+        self.on_change_sendmsg = []
+
+        self.on_close_window = []
+
+        # create GUI
+        self.createGUI()
+
+        # set listener
+        # close winder listener
+        self.window.protocol("WM_DELETE_WINDOW", self.close_window)
+        # button listener
+        self.cancel_button['command'] = self.push_cancel_button
+        self.send_button['command'] = self.push_send_button
+        # text listener
+        self.sendmsg.bind('<<Change>>', self.change_sendmsg)
+
+        # update
+        self.setText(self.project.aipo_message)
+        self.update()
+
+    def createGUI(self):
+        # frames
+        self.main_frame = ttk.Frame(self.window)
+        # over wrap
+        self.window_label = ttk.Label(self.main_frame, text="Aipoへメッセージを送信する人，ファイル名，メッセージを確認してください．")
+        # aipo message list
+        self.list_frame = ttk.Frame(self.main_frame, style="Table.TFrame")
+        '''
+        self.list_frame_scrollbar = ttk.Scrollbar(
+            self.list_frame,
+            orient=tk.VERTICAL,
+            command=self.list_frame.yview
+        )
+        self.list_frame["yscrollcommand"] = self.list_frame_scrollbar.set
+        '''
+        # send message text box
+        self.sendmsg_frame = ttk.Frame(self.main_frame)
+        self.sendmsg_label = ttk.Label(self.sendmsg_frame, text="送信メッセージ")
+        self.sendmsg = CustomText(self.sendmsg_frame, height=5)
+        self.sendmsg_scrollbar = ttk.Scrollbar(
+            self.sendmsg,
+            orient=tk.VERTICAL,
+            command=self.sendmsg.yview
+        )
+        self.sendmsg["yscrollcommand"] = self.sendmsg_scrollbar.set
+        self.sendmsg_preview_label = ttk.Label(self.sendmsg_frame, text="プレビュー（実際に送信されるメッセージ）")
+        self.sendmsg_preview = ttk.Label(self.sendmsg_frame, text="")
+        # bottom button frame
+        self.bottom_frame = ttk.Frame(self.main_frame)
+
+        self.main_frame.grid(column=0, row=0, sticky=tk.NSEW)
+        self.window_label.grid(column=0, row=0, sticky=tk.NSEW)
+        self.list_frame.grid(column=0, row=1, sticky=[tk.N, tk.EW], padx=5, pady=5)
+        self.sendmsg_frame.grid(column=0, row=2, sticky=tk.NSEW)
+        self.sendmsg_label.grid(column=0, row=0, sticky=tk.NSEW)
+        self.sendmsg.grid(column=0, row=1, sticky=tk.NSEW)
+        self.sendmsg_preview_label.grid(column=1, row=0, sticky=tk.NSEW)
+        self.sendmsg_preview.grid(column=1, row=1, sticky=tk.NSEW)
+        self.bottom_frame.grid(column=0, row=4, sticky=tk.NSEW)
+
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        #self.main_frame.rowconfigure(3, weight=1)
+        self.list_frame.columnconfigure(3, weight=1)
+        self.sendmsg_frame.columnconfigure(0, weight=1)
+        self.sendmsg_frame.columnconfigure(1, weight=1)
+        self.sendmsg_frame.rowconfigure(1, weight=1)
+        self.bottom_frame.columnconfigure(0, weight=1)
+
+        # buttons
+        self.cancel_button = ttk.Button(self.bottom_frame, text="キャンセル", width=12)
+        self.send_button = ttk.Button(self.bottom_frame, text="送信", width=5)
+
+        self.cancel_button.grid(column=1, row=0, sticky=tk.E)
+        self.send_button.grid(column=2, row=0, sticky=tk.E)
+
+        ttk.Style().configure("Table.TLabel", relief="flat", background="#fff")
+        ttk.Style().configure("Table.TFrame", relief="flat", background="#111")
+
+    def update(self):
+        self.updateTable()
+        self.saveText()
+
+    def saveText(self):
+        self.project.aipo_message = self.sendmsg.get('1.0', 'end -1c')
+
+    def updateTable(self):
+        # destroy table
+        for child in self.list_frame.winfo_children():
+            child.destroy()
+        row = 0
+        # header
+        ttk.Label(self.list_frame, text="名前", style="Table.TLabel").grid(column=0, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.list_frame, text="AipoID", style="Table.TLabel").grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.list_frame, text="送信ファイル名", style="Table.TLabel").grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.list_frame, text="更新日", style="Table.TLabel").grid(column=3, row=row, sticky=tk.EW, padx=1, pady=1)
+        row += 1
+        # table
+        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=True)
+        for name in namelist:
+            # name
+            ttk.Label(
+                self.list_frame,
+                text=name.name,
+                style="Table.TLabel"
+            ).grid(column=0, row=row, sticky=tk.EW, padx=1, pady=1)
+            # aipo id
+            ttk.Label(
+                self.list_frame,
+                text=name.aipo_id,
+                style="Table.TLabel"
+            ).grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+            # send file name
+            filename = os.path.abspath(os.path.join(self.project.output_file, self.project.name, name.zip_filename))
+            ttk.Label(
+                self.list_frame,
+                text=filename,
+                style="Table.TLabel"
+            ).grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+            # update
+            update = datetime.datetime.fromtimestamp(os.stat(filename).st_mtime).strftime('%Y/%m/%d %H:%M:%S') if os.path.exists(filename) else "ファイルが存在しません"
+            ttk.Label(
+                self.list_frame,
+                text=update,
+                style="Table.TLabel"
+            ).grid(column=3, row=row, sticky=tk.EW, padx=1, pady=1)
+            row += 1
+
+    def setText(self, str):
+        self.sendmsg.delete('1.0', 'end')
+        self.sendmsg.insert('1.0', str)
+
+    def push_cancel_button(self):
+        for func in self.on_push_cancel_button:
+            func()
+
+    def push_send_button(self):
+        for func in self.on_push_send_button:
+            func()
+
+    def change_sendmsg(self, event):
+        for func in self.on_change_sendmsg:
+            func(event)
+
+    def close_window(self):
+        for func in self.on_close_window:
+            func()
+        self.window.destroy()
+
+class SendResultView:
+    def __init__(self, app_window, project):
+        self.window = tk.Toplevel(app_window)
+
+        self.window.title("EXCELtoPDF - メッセージ送信結果")
+        self.window.geometry("700x480")
+        self.window.iconbitmap(default='icon.ico')
+
+        self.project = project
+
+        self.createGUI()
+
+    def createGUI(self):
+        self.main_frame = ttk.Frame(self.window)
+        self.main_frame.grid(column=0, row=0, sticky=tk.NSEW)
+
+        if not self.project.is_success:
+            ttk.Label(self.main_frame, text="送信エラー").grid(column=0, row=0, sticky=tk.E)
+            ttk.Label(self.main_frame, text=self.project.error_message).grid(column=0, row=1, sticky=tk.E)
+            return
+
+        self.window_label = ttk.Label(self.main_frame, text="送信結果")
+        self.result_frame = ttk.Frame(self.main_frame, style="Table.TFrame")
+
+        self.window_label.grid(column=0, row=0, sticky=tk.NSEW, padx=1, pady=1)
+        self.result_frame.grid(column=0, row=1, sticky=[tk.N, tk.EW], padx=5, pady=5)
+
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(0, weight=1)
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        self.result_frame.columnconfigure(2, weight=1)
+
+        row = 0
+        # header
+        ttk.Label(self.result_frame, text="名前", style="Table.TLabel").grid(column=0, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.result_frame, text="結果", style="Table.TLabel").grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+        ttk.Label(self.result_frame, text="備考", style="Table.TLabel").grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+        row += 1
+        # table
+        # table
+        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=True)
+        for name in namelist:
+            # name
+            ttk.Label(
+                self.result_frame,
+                text=name.name,
+                style="Table.TLabel"
+            ).grid(column=0, row=row, sticky=tk.EW, padx=1, pady=1)
+            # result
+            ttk.Label(
+                self.result_frame,
+                text="完了" if name.is_success else "送信失敗",
+                style="Table.TLabel"
+            ).grid(column=1, row=row, sticky=tk.EW, padx=1, pady=1)
+            # note
+            ttk.Label(
+                self.result_frame,
+                text=name.error_message,
+                style="Table.TLabel"
+            ).grid(column=2, row=row, sticky=tk.EW, padx=1, pady=1)
+            row += 1
+
+        ttk.Style().configure("Table.TLabel", relief="flat", background="#fff")
+        ttk.Style().configure("Table.TFrame", relief="flat", background="#111")
+
 class Controller:
     def __init__(self, view):
         self.view = view
@@ -745,6 +1041,7 @@ class Controller:
         # other param
         self.current_project = None
         self.current_name = None
+        self.sendaipo_window = None
 
         # attributes
         self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
@@ -763,6 +1060,7 @@ class Controller:
         self.view.on_push_setting_sheet_button = [self.updateData, self.push_setting_sheet_button, self.updateView]
         self.view.on_push_setting_output_button = [self.updateData, self.push_setting_output_button, self.updateView]
         self.view.on_push_genpdf_button = [self.updateData, self.push_genpdf_button, self.updateView]
+        self.view.on_push_sendaipo_button = [self.updateData, self.push_sendaipo_button, self.updateView]
 
         self.view.on_select_projectlist = [self.updateData, self.select_projectlist, self.updateView]
         self.view.on_select_namelist = [self.updateData, self.select_namelist, self.updateView]
@@ -775,7 +1073,10 @@ class Controller:
 
         self.view.on_change_edit_default_pdf = [self.updateData, self.change_edit_default_pdf, self.updateView]
         self.view.on_change_edit_default_zip = [self.updateData, self.change_edit_default_zip, self.updateView]
+        self.view.on_change_edit_send_aipo = [self.updateData, self.change_edit_send_aipo, self.updateView]
         self.view.on_change_setting_genpdf = [self.updateData, self.change_setting_genpdf, self.updateView]
+
+        self.view.on_change_edit_aipo_id = [self.updateData, self.change_edit_aipo_id, self.updateView]
 
         self.view.on_close_window = [self.updateData, self.close_window]
         # params initialize
@@ -847,6 +1148,8 @@ class Controller:
             self.current_name.zip_filename = value.zip_filename
         self.current_name.is_default_pdf_filename = value.is_default_pdf_filename
         self.current_name.is_default_zip_filename = value.is_default_zip_filename
+        self.current_name.aipo_id = tryParseInt(value.aipo_id, self.current_name.aipo_id)
+        self.current_name.send_aipo = value.send_aipo
 
     @property
     def input_file(self):
@@ -1083,6 +1386,22 @@ class Controller:
 
         self.view.disableGen()
 
+    def push_sendaipo_button(self):
+        log("push_sendaipo_button")
+        if self.sendaipo_window:
+            self.view.setInfo('二つ同時に開けません')
+            return
+        if not self.current_project:
+            self.view.setInfo('プロジェクトを選んでください')
+            return
+        self.sendaipo_window = SendSettingView(self.view.window, self.current_project)
+
+        # set listener
+        self.sendaipo_window.on_push_cancel_button = [self.SSV_update, self.SSV_push_cancel_button]
+        self.sendaipo_window.on_push_send_button = [self.SSV_update, self.SSV_push_send_button]
+        self.sendaipo_window.on_change_sendmsg = [self.SSV_update, self.SSV_change_sendmsg]
+        self.sendaipo_window.on_close_window = [self.SSV_update, self.SSV_close_window]
+
     def select_projectlist(self, event):
         if len(self.project_list_selected) is 0:
             return
@@ -1123,12 +1442,50 @@ class Controller:
     def change_edit_default_zip(self):
         log("change_edit_default_zip")
 
+    def change_edit_send_aipo(self):
+        log("change_edit_send_aipo")
+        if self.sendaipo_window:
+            self.SSV_update()
+
     def change_setting_genpdf(self):
         log("change_setting_genpdf")
+
+    def change_edit_aipo_id(self, event):
+        log("change_edit_aipo_id", str(event))
+        if self.sendaipo_window:
+            self.SSV_update()
 
     def close_window(self):
         log("close_window")
         self.exportData()
+
+    # SendSettingView listener
+    def SSV_update(self, *arg):
+        self.sendaipo_window.update()
+
+    def SSV_push_cancel_button(self):
+        log("SendSettingView - push_cancel_button")
+        self.sendaipo_window.close_window()
+        self.sendaipo_window = None
+
+    def SSV_push_send_button(self):
+        log("SendSettingView - push_send_button")
+        result = messagebox.askquestion(title="確認", message="メッセージを送信してもよろしいですか？")
+        log(result)
+        if result == "yes":
+            self.sendaipo_window.project.sendMessage(self.view.setInfo)
+            SendResultView(self.view.window, self.sendaipo_window.project)
+            self.sendaipo_window.close_window()
+            self.sendaipo_window = None
+
+    def SSV_change_sendmsg(self, event):
+        log("SendSettingView - change_sendmsg")
+        project = self.sendaipo_window.project
+        self.sendaipo_window.sendmsg_preview['text'] = Name(name="山田太郎").create_aipo_message(project.aipo_message, searchMonth(project.name))
+
+    def SSV_close_window(self):
+        log("SendSettingView - close_window")
+        self.sendaipo_window = None
 
 class Project:
     @staticmethod
@@ -1166,7 +1523,8 @@ class Project:
         output_file=None,
         offset=None,
         range=None,
-        genpdf=None
+        genpdf=None,
+        aipo_message=None
     ):
         # params (initial value)
         self.name_list = name_list or []
@@ -1176,8 +1534,13 @@ class Project:
         self.offset = offset or (0, 0)
         self.range = range or (3, 3)
         self.genpdf = genpdf or False
+        self.aipo_message = aipo_message or "%MONTH%月度給与明細です。\nお疲れ様でした。"
 
-        self.save_attrs = ["name_list", "input_file", "list_index", "output_file", "offset", "range", "genpdf"]
+        self.save_attrs = ["name_list", "input_file", "list_index", "output_file", "offset", "range", "genpdf", "aipo_message"]
+
+        # temp
+        self.is_success = False
+        self.error_message = ""
 
     def __repr__(self):
         s = ""
@@ -1233,6 +1596,48 @@ class Project:
         result = self.input_file.generatePDF(self.output_file, self.name, pdflist, self.offset, self.range, infofunc)
         return result
 
+    def sendMessage(self, infofunc=None):
+        # メッセージを送信する人のリスト
+        aipolist = Name.getAipoGroup(self.name_list)
+
+        # プロジェクト名から月を抽出
+        month = searchMonth(self.name)
+
+        # 記録の初期化
+        Name.resetSuccess(aipolist)
+
+        # メッセージの送信
+        '''
+        jsessionid = get_aipo_session()
+        if not jsessionid:
+            infofunc("ネットワークエラーのため，メッセージを送信できませんでした．") if infofunc else 0
+            self.is_success = False
+            self.error_message = "ネットワークエラーのため，メッセージを送信できませんでした．"
+            return False
+
+        jsessionid = aipo_login(jsessionid, username, password)
+        if not jsessionid:
+            infofunc("ユーザー名またはパスワードが違ったため，メッセージを送信できませんでした．") if infofunc else 0
+            self.is_success = False
+            self.error_message = "ユーザー名またはパスワードが違ったため，メッセージを送信できませんでした．"
+            return False
+        '''
+        for member in aipolist:
+            attachment_file = os.path.join(self.output_file, self.name,  member.zip_filename)
+            message = member.create_aipo_message(self.aipo_message, month)
+            log(member.name + " - AipoID：" + str(member.aipo_id) + "添付ファイル：" + attachment_file + " メッセージ：" + message)
+            #if post_message(jsessionid, member.aipo_id, attachment_file, message):
+            if "杉野森" in member.name:
+                member.is_success = True
+                member.error_message = "送信成功"
+            else:
+                member.is_success = False
+                member.error_message = "送信中にエラーが発生しました．"
+
+        self.is_success = True
+
+        return True
+
 class Name:
     @staticmethod
     def loadNames(list):
@@ -1254,6 +1659,10 @@ class Name:
     @staticmethod
     def getPdfGroup(names):
         return [name for name in names if name.in_pdf_list]
+
+    @staticmethod
+    def getAipoGroup(names):
+        return [name for name in names if name.send_aipo]
 
     @staticmethod
     def sort(names, name_sort="降順", pdf_sort="降順"):
@@ -1296,7 +1705,9 @@ class Name:
         _pdf_filename=None,
         _zip_filename=None,
         is_default_pdf_filename=True,
-        is_default_zip_filename=True
+        is_default_zip_filename=True,
+        aipo_id=None,
+        send_aipo=None
     ):
         self.name = name or "新規ユーザー"
         self.name_list_index = name_list_index or -1
@@ -1308,8 +1719,10 @@ class Name:
         self._zip_filename = _zip_filename or "zipfile.zip"
         self.is_default_pdf_filename = is_default_pdf_filename
         self.is_default_zip_filename = is_default_zip_filename
+        self.aipo_id = aipo_id or -1
+        self.send_aipo = send_aipo or False
 
-        self.save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list', 'pdf_password', 'zip_password', '_pdf_filename', '_zip_filename', 'is_default_pdf_filename', 'is_default_zip_filename']
+        self.save_attrs = ['name', 'name_list_index', 'pdf_list_index', 'in_pdf_list', 'pdf_password', 'zip_password', '_pdf_filename', '_zip_filename', 'is_default_pdf_filename', 'is_default_zip_filename', 'aipo_id', 'send_aipo']
 
         # non param
         self.project = None
@@ -1360,6 +1773,9 @@ class Name:
     def toDict(self):
         data = {x : getattr(self, x) for x in self.save_attrs}
         return data
+
+    def create_aipo_message(self, msg, month):
+        return msg.replace('%NAME%', self.name).replace('%MONTH%', month or "X")
 
 class ExcelFile:
     excel = None
