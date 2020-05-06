@@ -1,7 +1,9 @@
 import os
 import re
+from settings import *
 
-DEBUG = True
+print("utils - DEBUG :", DEBUG)
+
 def log(*arg, **darg):
     if DEBUG:
         print(*arg, **darg)
@@ -25,7 +27,7 @@ def tryRemoveFile(filename):
     try:
         os.remove(filename)
     except Exception as e:
-        print('tryRemoveFile - ', e)
+        log('tryRemoveFile - ', e)
 
 def searchMonth(str):
     return (re.compile(r'([0-9]+)月').findall(str) or [''])[0]
@@ -35,9 +37,9 @@ def getSheetsName(xlsx_files, infofunc=None):
     try:
         excel = win32com.client.DispatchEx("Excel.Application")
     except Exception as e:
-        print("Error : Don't run excel com. Details - ", e)
+        log("Error : Don't run excel com. Details - ", e)
     if excel is None:
-        print('Error : No app found')
+        log('Error : No app found')
         return
     try:
         wb = excel.Workbooks.Open(tmpfile, None, True)
@@ -45,7 +47,7 @@ def getSheetsName(xlsx_files, infofunc=None):
         for sheet in wb.Worksheets:
             pass
     except Exception as e:
-        print('Error : cannot save as pdf.', e)
+        log('Error : cannot save as pdf.', e)
         infofunc or infofunc('エクセルファイルの処理中に問題が発生しました．')
         is_success = False
         #raise e
@@ -81,9 +83,9 @@ def genPDF(xlsx_file, pdf_file, name_list, offset, range, infofunc):
     try:
         excel = win32com.client.DispatchEx("Excel.Application")
     except Exception as e:
-        print("Error : Don't run excel com. Details - ", e)
+        log("Error : Don't run excel com. Details - ", e)
     if excel is None:
-        print('Error : No app found')
+        log('Error : No app found')
         return
     try:
         wb = excel.Workbooks.Open(tmpfile, None, True)
@@ -150,7 +152,7 @@ def genPDF(xlsx_file, pdf_file, name_list, offset, range, infofunc):
                     infofunc or infofunc('「' + name.name + '」のファイル生成に失敗しました．')
                     is_success = False
     except Exception as e:
-        print('Error : cannot save as pdf.', e)
+        log('Error : cannot save as pdf.', e)
         infofunc or infofunc('エクセルファイルの処理中に問題が発生しました．')
         is_success = False
         #raise e

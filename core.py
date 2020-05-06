@@ -16,8 +16,11 @@ import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
 from tkinter import ttk
 from tkinter_extend import *
+from settings import *
 from utils import *
 from aipo_message import *
+
+print("core - DEBUG :", DEBUG)
 
 class App:
     def __init__(self):
@@ -31,7 +34,7 @@ class App:
 class View:
     def __init__(self):
         self.window = tk.Tk()
-        self.window.title("EXCELtoPDF")
+        self.window.title("EXCELtoPDF" + (" - debug mode" if DEBUG else ""))
         self.window.geometry("1000x480")
         self.window.iconbitmap(default='icon.ico')
 
@@ -908,7 +911,7 @@ class SendSettingView:
         ttk.Label(self.list_frame, text="更新日", style="Table.TLabel").grid(column=3, row=row, sticky=tk.EW, padx=1, pady=1)
         row += 1
         # table
-        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=True)
+        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=False)
         for name in namelist:
             # name
             ttk.Label(
@@ -1000,7 +1003,7 @@ class SendResultView:
         row += 1
         # table
         # table
-        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=True)
+        namelist = sorted(Name.getAipoGroup(self.project.name_list), key=lambda ins : ins.name, reverse=False)
         for name in namelist:
             # name
             ttk.Label(
@@ -1470,7 +1473,7 @@ class Controller:
 
     def SSV_push_send_button(self):
         log("SendSettingView - push_send_button")
-        result = messagebox.askquestion(title="確認", message="メッセージを送信してもよろしいですか？")
+        result = messagebox.askquestion(title="確認", message="メッセージを送信してもよろしいですか？" + ("（デバッグ中．送信されません．）" if DEBUG else ""))
         log(result)
         if result == "yes":
             self.sendaipo_window.project.sendMessage(self.view.setInfo)
@@ -1606,8 +1609,28 @@ class Project:
         # 記録の初期化
         Name.resetSuccess(aipolist)
 
+        # デバッグ中は送信しない
+        if DEBUG:
+            for member in aipolist:
+                attachment_file = os.path.join(self.output_file, self.name,  member.zip_filename)
+                message = member.create_aipo_message(self.aipo_message, month)
+                if not os.path.exists(attachment_file):
+                    member.is_success = False
+                    member.error_message = "添付ファイルが見つからなかったため，送信できませんでした．"
+                    continue
+                log(member.name + " - AipoID：" + str(member.aipo_id) + "添付ファイル：" + attachment_file + " メッセージ：" + message)
+                #if post_message(jsessionid, member.aipo_id, attachment_file, message):
+                if "杉野森" in member.name:
+                    member.is_success = True
+                    member.error_message = "送信成功"
+                else:
+                    member.is_success = False
+                    member.error_message = "送信中にエラーが発生しました．"
+            self.is_success = True
+            return True
+
         # メッセージの送信
-        '''
+        print("Warning!!! : send message on aipo")
         jsessionid = get_aipo_session()
         if not jsessionid:
             infofunc("ネットワークエラーのため，メッセージを送信できませんでした．") if infofunc else 0
@@ -1621,13 +1644,15 @@ class Project:
             self.is_success = False
             self.error_message = "ユーザー名またはパスワードが違ったため，メッセージを送信できませんでした．"
             return False
-        '''
+
         for member in aipolist:
             attachment_file = os.path.join(self.output_file, self.name,  member.zip_filename)
             message = member.create_aipo_message(self.aipo_message, month)
-            log(member.name + " - AipoID：" + str(member.aipo_id) + "添付ファイル：" + attachment_file + " メッセージ：" + message)
-            #if post_message(jsessionid, member.aipo_id, attachment_file, message):
-            if "杉野森" in member.name:
+            if not os.path.exists(attachment_file):
+                member.is_success = False
+                member.error_message = "添付ファイルが見つからなかったため，送信できませんでした．"
+                continue
+            if post_message(jsessionid, member.aipo_id, attachment_file, message):
                 member.is_success = True
                 member.error_message = "送信成功"
             else:
