@@ -103,7 +103,7 @@ def post_message(jsessionid, room_id, attachment_file, message):
 
 def get_content(attachment_file):
     try:
-        with open(attachment_file) as file:
+        with open(attachment_file, mode="rb") as file:
             attachment_content = file.read()
     except IOError:
         print('cannot open attachment file')
