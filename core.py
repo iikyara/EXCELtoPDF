@@ -1325,7 +1325,7 @@ class Controller:
             return
         log("push_pdflistop_trash")
         selected = self.pdf_list_selected[0]
-        popins = [ins for ins in self._name_list if ins.pdf_list_index is selected][0]
+        popins = [ins for ins in self._name_list if ins.pdf_list_index is selected and ins.in_pdf_list][0]
         popins.in_pdf_list = False
         self.view.setInfo('「' + popins.name + '」をPDF化リストから削除しました．')
 
