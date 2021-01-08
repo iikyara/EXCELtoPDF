@@ -81,6 +81,7 @@ class View:
         self.setting_output = None
 
         # button
+        self.projectlistop_duplicate = None
         self.projectlistop_new = None
         self.projectlistop_trash = None
         self.addbutton = None
@@ -111,6 +112,7 @@ class View:
         self.setting_genpdf = None
 
         # listner func
+        self.on_push_projectlistop_duplicate = []
         self.on_push_projectlistop_new = []
         self.on_push_projectlistop_trash = []
         self.on_push_addbutton = []
@@ -149,6 +151,7 @@ class View:
         # close window listener
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)
         # button listener
+        self.projectlistop_duplicate['command'] = self.push_projectlistop_duplicate
         self.projectlistop_new['command'] = self.push_projectlistop_new
         self.projectlistop_trash['command'] = self.push_projectlistop_trash
         self.addbutton['command'] = self.push_addbutton
@@ -237,14 +240,16 @@ class View:
         self.projectlistop_sort = ttk.Combobox(self.projectlistop_frame, textvariable=self.projectlistop_sort_data, values=self.sortlist, state='readonly', width=10)
         self.projectlistop_sort.current(0)
         # project operation
+        self.projectlistop_duplicate = ttk.Button(self.projectlistop_frame, text="複製", width=5)
         self.projectlistop_new = ttk.Button(self.projectlistop_frame, text="新規作成", width=10)
         self.projectlistop_trash = ttk.Button(self.projectlistop_frame, text="削除", width=5)
 
         self.projectlistop_frame.grid(column=0, row=4, sticky=tk.EW)
         self.projectlistop_sort_label.grid(column=0, row=0, sticky=tk.W)
         self.projectlistop_sort.grid(column=1, row=0, sticky=tk.W)
-        self.projectlistop_new.grid(column=2, row=0, sticky=tk.E)
-        self.projectlistop_trash.grid(column=3, row=0, sticky=tk.E)
+        self.projectlistop_duplicate.grid(column=2, row=0, sticky=tk.E)
+        self.projectlistop_new.grid(column=3, row=0, sticky=tk.E)
+        self.projectlistop_trash.grid(column=4, row=0, sticky=tk.E)
 
         self.projectlistop_frame.columnconfigure(2, weight=1)
 
@@ -538,6 +543,7 @@ class View:
         self.setting_output.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         #button
+        self.projectlistop_duplicate.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.projectlistop_new.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.projectlistop_trash.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.addbutton.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
@@ -567,6 +573,10 @@ class View:
         self.setting_genpdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         self.window.update()
+
+    def push_projectlistop_duplicate(self):
+        for func in self.on_push_projectlistop_duplicate:
+            func()
 
     def push_projectlistop_new(self):
         for func in self.on_push_projectlistop_new:
@@ -1052,6 +1062,7 @@ class Controller:
         self.save_attrs = ["projects", "project_sort", "name_sort", "pdf_sort"]
         #self.save_attrs = ["_name_list", "name_sort", "pdf_sort", "_input_file", "sheet", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
         # set listener
+        self.view.on_push_projectlistop_duplicate = [self.updateData, self.push_projectlistop_duplicate, self.updateView]
         self.view.on_push_projectlistop_new = [self.updateData, self.push_projectlistop_new, self.updateView]
         self.view.on_push_projectlistop_trash = [self.updateData, self.push_projectlistop_trash, self.updateView]
         self.view.on_push_addbutton = [self.updateData, self.push_addbutton, self.updateView]
@@ -1284,6 +1295,13 @@ class Controller:
         with open(filepath, mode='w', encoding='cp932', errors='ignore') as f:
             f.write(json.dumps(data))
 
+    def push_projectlistop_duplicate(self):
+        log("push_projectlistop_duplicate")
+        selected = self.project_list_selected[0]
+        dupins = [ins for ins in self.projects if ins.list_index is selected][0]
+        self.projects.append(dupins.copy())
+        self.view.setInfo('「' + dupins.name + '」を複製しました．')
+
     def push_projectlistop_new(self):
         log("push_projectlistop_new")
         self.projects.append(Project())
@@ -1292,8 +1310,11 @@ class Controller:
         log("push_projectlistop_trash")
         selected = self.project_list_selected[0]
         popins = [ins for ins in self.projects if ins.list_index is selected][0]
-        self.projects.pop(self.projects.index(popins))
-        self.view.setInfo('「' + popins.name + '」を削除しました．')
+        #確認する
+        result = messagebox.askquestion(title="確認", message=popins.name + "を削除しようとしています。よろしいですか？")
+        if result == "yes":
+            self.projects.pop(self.projects.index(popins))
+            self.view.setInfo('「' + popins.name + '」を削除しました．')
 
     def push_addbutton(self):
         log("push_addbutton")
@@ -1308,8 +1329,11 @@ class Controller:
         log("push_namelistop_trash")
         selected = self.name_list_selected[0]
         popins = [ins for ins in self._name_list if ins.name_list_index is selected][0]
-        self._name_list.pop(self._name_list.index(popins))
-        self.view.setInfo('「' + popins.name + '」を削除しました．')
+        #確認する
+        result = messagebox.askquestion(title="確認", message=popins.name + "を削除しようとしています。よろしいですか？")
+        if result == "yes":
+            self._name_list.pop(self._name_list.index(popins))
+            self.view.setInfo('「' + popins.name + '」を削除しました．')
 
     def push_listop_add(self):
         if len(self.name_list_selected) is 0:
@@ -1545,6 +1569,23 @@ class Project:
         self.is_success = False
         self.error_message = ""
 
+    def copy(self):
+        nlist = []
+        for i in range(len(self.name_list)):
+            nlist.append(self.name_list[i].copy())
+        log(type(self.list_index))
+        newins = Project(
+            nlist,
+            self.input_file.copy(),
+            self.list_index,
+            self.output_file,
+            self.offset,
+            self.range,
+            self.genpdf,
+            self.aipo_message
+        )
+        return newins
+
     def __repr__(self):
         s = ""
         for k,v in Project.toDictProjects([self])[0].items():
@@ -1754,6 +1795,23 @@ class Name:
         self.is_success = False
         self.error_message = ""
 
+    def copy(self):
+        newins = Name(
+            self.name,
+            self.name_list_index,
+            self.pdf_list_index,
+            self.in_pdf_list,
+            self.pdf_password,
+            self.zip_password,
+            self._pdf_filename,
+            self._zip_filename,
+            self.is_default_pdf_filename,
+            self.is_default_zip_filename,
+            self.aipo_id,
+            self.send_aipo
+        )
+        return newins
+
     def __repr__(self):
         s = ""
         for k,v in Name.toDictNames([self])[0].items():
@@ -1869,6 +1927,16 @@ class ExcelFile:
         self.workbook = None
 
         self.save_attrs = ['filename', 'password', 'enable_sheet']
+
+    def copy(self):
+        newins = ExcelFile(
+            self.filename,
+            self.password
+        )
+        newins.enable_sheet = self.enable_sheet
+        newins.reloadfile()
+        newins.reloadSheets()
+        return newins
 
     def __del__(self):
         self.discard()
