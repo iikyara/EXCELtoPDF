@@ -62,7 +62,7 @@ class View:
         self.edit_default_pdf_data = tk.BooleanVar()
         self.edit_default_zip_data = tk.BooleanVar()
         self.edit_send_aipo_data = tk.BooleanVar()
-        self.setting_genpdf_data = tk.BooleanVar()
+        #self.setting_genpdf_data = tk.BooleanVar()
 
         # text box
         self.namebox = None
@@ -109,7 +109,7 @@ class View:
         self.edit_default_pdf = None
         self.edit_default_zip = None
         self.edit_send_aipo = None
-        self.setting_genpdf = None
+        #self.setting_genpdf = None
 
         # listner func
         self.on_push_projectlistop_duplicate = []
@@ -138,7 +138,7 @@ class View:
         self.on_change_edit_default_pdf = []
         self.on_change_edit_default_zip = []
         self.on_change_edit_send_aipo = []
-        self.on_change_setting_genpdf = []
+        #self.on_change_setting_genpdf = []
 
         self.on_change_edit_aipo_id = []
 
@@ -177,7 +177,7 @@ class View:
         self.edit_default_pdf['command'] = self.change_edit_default_pdf
         self.edit_default_zip['command'] = self.change_edit_default_zip
         self.edit_send_aipo['command'] = self.change_edit_send_aipo
-        self.setting_genpdf['command'] = self.change_setting_genpdf
+        #self.setting_genpdf['command'] = self.change_setting_genpdf
         # entry widget listener
         self.edit_aipo_id.bind('<KeyRelease>', self.change_edit_aipo_id)
 
@@ -426,8 +426,8 @@ class View:
         self.setting_output = ttk.Entry(self.setting_output_frame)
         self.setting_output_button = ttk.Button(self.setting_output_frame, text="参照", width=5)
         # is pdf
-        self.setting_genpdf_label = ttk.Label(self.setting_frame, text="PDF化：")
-        self.setting_genpdf = ttk.Checkbutton(self.setting_frame, variable=self.setting_genpdf_data)
+        #self.setting_genpdf_label = ttk.Label(self.setting_frame, text="PDF化：")
+        #self.setting_genpdf = ttk.Checkbutton(self.setting_frame, variable=self.setting_genpdf_data)
 
         self.setting_frame.grid(column=0, row=1, sticky=tk.NSEW)
         self.setting_lable.grid(column=0, row=0, sticky=tk.W)
@@ -455,8 +455,8 @@ class View:
         self.setting_output_frame.grid(column=1, row=6, sticky=tk.EW)
         self.setting_output.grid(column=0, row=0, sticky=tk.EW)
         self.setting_output_button.grid(column=1, row=0, sticky=tk.E)
-        self.setting_genpdf_label.grid(column=0, row=7, sticky=tk.E)
-        self.setting_genpdf.grid(column=1, row=7, sticky=tk.EW)
+        #self.setting_genpdf_label.grid(column=0, row=7, sticky=tk.E)
+        #self.setting_genpdf.grid(column=1, row=7, sticky=tk.EW)
 
         self.setting_frame.columnconfigure(1, weight=1)
         self.setting_input_frame.columnconfigure(0, weight=1)
@@ -570,7 +570,7 @@ class View:
         #checkbox
         self.edit_default_pdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
         self.edit_default_zip.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
-        self.setting_genpdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
+        #self.setting_genpdf.configure(state=tk.DISABLED if is_gen else tk.NORMAL)
 
         self.window.update()
 
@@ -666,9 +666,9 @@ class View:
         for func in self.on_change_edit_send_aipo:
             func()
 
-    def change_setting_genpdf(self):
-        for func in self.on_change_setting_genpdf:
-            func()
+    # def change_setting_genpdf(self):
+    #     for func in self.on_change_setting_genpdf:
+    #         func()
 
     def change_edit_aipo_id(self, event):
         for func in self.on_change_edit_aipo_id:
@@ -710,13 +710,13 @@ class View:
                 tryParseInt(self.setting_range_column.get(), default=1),
                 tryParseInt(self.setting_range_row.get(), default=1)
             ),
-            "genpdf" : self.setting_genpdf_data.get(),
+            #"genpdf" : self.setting_genpdf_data.get(),
             "project_list_selected" : self.projectlist.curselection(),
             "name_list_selected" : self.namelist.curselection(),
             "pdf_list_selected" : self.pdflist.curselection(),
         }
 
-    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, edit_name, input_file, input_password, sheet, output_file, sheet_list, offset, range, genpdf, project_list_selected, name_list_selected, pdf_list_selected):
+    def setData(self, project_list, name_list, pdf_list, project_sort, name_sort, pdf_sort, edit_name, input_file, input_password, sheet, output_file, sheet_list, offset, range, project_list_selected, name_list_selected, pdf_list_selected):
         self.projectlist['listvariable'] = tk.StringVar(value=project_list)
         self.namelist['listvariable'] = tk.StringVar(value=name_list)
         self.pdflist['listvariable'] = tk.StringVar(value=pdf_list)
@@ -737,7 +737,7 @@ class View:
         self.setting_range_column.insert(tk.END, range[0])
         self.setting_range_row.delete(0, tk.END)
         self.setting_range_row.insert(tk.END, range[1])
-        self.setting_genpdf_data.set(genpdf)
+        #self.setting_genpdf_data.set(genpdf)
 
     def run(self):
         self.window.mainloop()
@@ -815,10 +815,12 @@ class SendSettingView:
         self.sendmsg = None
 
         # button
+        self.setting_button = None
         self.cancel_button = None
         self.send_button = None
 
         # listner func
+        self.on_push_setting_button = []
         self.on_push_cancel_button = []
         self.on_push_send_button = []
         self.on_change_sendmsg = []
@@ -832,6 +834,7 @@ class SendSettingView:
         # close winder listener
         self.window.protocol("WM_DELETE_WINDOW", self.close_window)
         # button listener
+        self.setting_button['command'] = self.push_setting_button
         self.cancel_button['command'] = self.push_cancel_button
         self.send_button['command'] = self.push_send_button
         # text listener
@@ -893,11 +896,13 @@ class SendSettingView:
         self.bottom_frame.columnconfigure(0, weight=1)
 
         # buttons
+        self.setting_button = ttk.Button(self.bottom_frame, text="ユーザ設定", width=12)
         self.cancel_button = ttk.Button(self.bottom_frame, text="キャンセル", width=12)
         self.send_button = ttk.Button(self.bottom_frame, text="送信", width=5)
 
-        self.cancel_button.grid(column=1, row=0, sticky=tk.E)
-        self.send_button.grid(column=2, row=0, sticky=tk.E)
+        self.setting_button.grid(column=1, row=0, sticky=tk.E)
+        self.cancel_button.grid(column=2, row=0, sticky=tk.E)
+        self.send_button.grid(column=3, row=0, sticky=tk.E)
 
         ttk.Style().configure("Table.TLabel", relief="flat", background="#fff")
         ttk.Style().configure("Table.TFrame", relief="flat", background="#111")
@@ -955,6 +960,10 @@ class SendSettingView:
         self.sendmsg.delete('1.0', 'end')
         self.sendmsg.insert('1.0', str)
 
+    def push_setting_button(self):
+        for func in self.on_push_setting_button:
+            func()
+
     def push_cancel_button(self):
         for func in self.on_push_cancel_button:
             func()
@@ -966,6 +975,143 @@ class SendSettingView:
     def change_sendmsg(self, event):
         for func in self.on_change_sendmsg:
             func(event)
+
+    def close_window(self):
+        for func in self.on_close_window:
+            func()
+        self.window.destroy()
+
+class AipoUserSettingView:
+    def __init__(self, app_window, aipouser):
+        self.window = tk.Toplevel(app_window)
+
+        self.window.title("EXCELtoPDF - Aipo送信ユーザ設定")
+        self.window.geometry("350x150")
+        self.window.iconbitmap(default='icon.ico')
+
+        self.aipouser = aipouser
+
+        # text area
+        self.username = None
+        self.password = None
+        self.aipo_url = None
+        self.portal_id = None
+
+        # button
+        self.cancel_button = None
+        self.save_button = None
+
+        # listner func
+        self.on_push_cancel_button = []
+        self.on_push_save_button = []
+
+        self.on_close_window = []
+
+        # create GUI
+        self.createGUI()
+
+        # set listener
+        # close winder listener
+        self.window.protocol("WM_DELETE_WINDOW", self.close_window)
+        # button listener
+        self.cancel_button['command'] = self.push_cancel_button
+        self.save_button['command'] = self.push_save_button
+
+        # update
+        self.setText(self.aipouser)
+        self.update()
+
+    def createGUI(self):
+        # frames
+        self.main_frame = ttk.Frame(self.window, style="MAIN.TFrame")
+        # over wrap
+        self.window_label = ttk.Label(self.window, text="Aipoの送信ユーザ情報を入力してください。")
+        # send message text box
+        #self.username_frame = ttk.Frame(self.main_frame)
+        self.username_label = ttk.Label(self.main_frame, text="ユーザー名")
+        self.username = ttk.Entry(self.main_frame)
+        #self.password_frame = ttk.Frame(self.main_frame)
+        self.password_label = ttk.Label(self.main_frame, text="パスワード")
+        self.password = ttk.Entry(self.main_frame)
+        #self.aipo_url_frame = ttk.Frame(self.main_frame)
+        self.aipo_url_label = ttk.Label(self.main_frame, text="Aipo URL")
+        self.aipo_url = ttk.Entry(self.main_frame)
+        #self.portal_id_frame = ttk.Frame(self.main_frame)
+        self.portal_id_label = ttk.Label(self.main_frame, text="Portal ID")
+        self.portal_id = ttk.Entry(self.main_frame)
+        # bottom button frame
+        self.bottom_frame = ttk.Frame(self.window)
+
+        self.window_label.grid(column=0, row=0, sticky=tk.NSEW)
+        self.main_frame.grid(column=0, row=1, sticky=tk.NSEW)
+        #self.username_frame.grid(column=0, row=1, sticky=tk.NSEW)
+        self.username_label.grid(column=0, row=1, sticky=tk.NSEW)
+        self.username.grid(column=1, row=1, sticky=tk.NSEW)
+        #self.password_frame.grid(column=0, row=2, sticky=tk.NSEW)
+        self.password_label.grid(column=0, row=2, sticky=tk.NSEW)
+        self.password.grid(column=1, row=2, sticky=tk.NSEW)
+        #self.aipo_url_frame.grid(column=0, row=3, sticky=tk.NSEW)
+        self.aipo_url_label.grid(column=0, row=3, sticky=tk.NSEW)
+        self.aipo_url.grid(column=1, row=3, sticky=tk.NSEW)
+        #self.portal_id_frame.grid(column=0, row=4, sticky=tk.NSEW)
+        self.portal_id_label.grid(column=0, row=4, sticky=tk.NSEW)
+        self.portal_id.grid(column=1, row=4, sticky=tk.NSEW)
+        self.bottom_frame.grid(column=0, row=2, sticky=tk.NSEW)
+
+        self.window.columnconfigure(0, weight=1)
+        self.window.rowconfigure(1, weight=1)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.rowconfigure(1, weight=1)
+        self.main_frame.rowconfigure(2, weight=1)
+        self.main_frame.rowconfigure(3, weight=1)
+        self.main_frame.rowconfigure(4, weight=1)
+        #self.username_frame.columnconfigure(1, weight=1)
+        #self.username_frame.rowconfigure(0, weight=1)
+        #self.password_frame.columnconfigure(1, weight=1)
+        #self.password_frame.rowconfigure(0, weight=1)
+        #self.aipo_url_frame.columnconfigure(1, weight=1)
+        #self.aipo_url_frame.rowconfigure(0, weight=1)
+        #self.portal_id_frame.columnconfigure(1, weight=1)
+        #self.portal_id_frame.rowconfigure(0, weight=1)
+        self.bottom_frame.columnconfigure(0, weight=1)
+        self.bottom_frame.rowconfigure(0, weight=1)
+
+        # buttons
+        self.cancel_button = ttk.Button(self.bottom_frame, text="キャンセル", width=12)
+        self.save_button = ttk.Button(self.bottom_frame, text="保存", width=5)
+
+        self.cancel_button.grid(column=1, row=0, sticky=tk.E)
+        self.save_button.grid(column=2, row=0, sticky=tk.E)
+
+        ttk.Style().configure("MAIN.TFrame", padding=6, relief="flat",   background="#F00")
+
+    def update(self):
+        pass
+        #self.saveText()
+
+    def saveText(self):
+        self.aipouser.username = self.username.get().strip()
+        self.aipouser.password = self.password.get().strip()
+        self.aipouser.aipo_url = self.aipo_url.get().strip()
+        self.aipouser.portal_id = self.portal_id.get().strip()
+
+    def setText(self, ins):
+        self.username.delete(0, tk.END)
+        self.username.insert(tk.END, ins.username)
+        self.password.delete(0, tk.END)
+        self.password.insert(tk.END, ins.password)
+        self.aipo_url.delete(0, tk.END)
+        self.aipo_url.insert(tk.END, ins.aipo_url)
+        self.portal_id.delete(0, tk.END)
+        self.portal_id.insert(tk.END, ins.portal_id)
+
+    def push_cancel_button(self):
+        for func in self.on_push_cancel_button:
+            func()
+
+    def push_save_button(self):
+        for func in self.on_push_save_button:
+            func()
 
     def close_window(self):
         for func in self.on_close_window:
@@ -1044,6 +1190,7 @@ class Controller:
 
         # params
         self.projects = []
+        self.aipouser = {}
         self.project_sort = ""
         self.name_sort = ""
         self.pdf_sort = ""
@@ -1055,11 +1202,12 @@ class Controller:
         self.current_project = None
         self.current_name = None
         self.sendaipo_window = None
+        self.aipousersetting_window = None
 
         # attributes
-        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
-        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet_list", "sheet", "output_file", "offset", "range", "genpdf", "project_list_selected", "name_list_selected", "pdf_list_selected"]
-        self.save_attrs = ["projects", "project_sort", "name_sort", "pdf_sort"]
+        self.updateData_attrs = ["project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet", "output_file", "offset", "range", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.updateView_attrs = ["project_list", "name_list", "pdf_list", "project_sort", "name_sort", "pdf_sort", "edit_name", "input_file", "input_password", "sheet_list", "sheet", "output_file", "offset", "range", "project_list_selected", "name_list_selected", "pdf_list_selected"]
+        self.save_attrs = ["projects", "project_sort", "name_sort", "pdf_sort", "aipouser"]
         #self.save_attrs = ["_name_list", "name_sort", "pdf_sort", "_input_file", "sheet", "output_file", "offset", "range", "name_list_selected", "pdf_list_selected"]
         # set listener
         self.view.on_push_projectlistop_duplicate = [self.updateData, self.push_projectlistop_duplicate, self.updateView]
@@ -1088,7 +1236,7 @@ class Controller:
         self.view.on_change_edit_default_pdf = [self.updateData, self.change_edit_default_pdf, self.updateView]
         self.view.on_change_edit_default_zip = [self.updateData, self.change_edit_default_zip, self.updateView]
         self.view.on_change_edit_send_aipo = [self.updateData, self.change_edit_send_aipo, self.updateView]
-        self.view.on_change_setting_genpdf = [self.updateData, self.change_setting_genpdf, self.updateView]
+        #self.view.on_change_setting_genpdf = [self.updateData, self.change_setting_genpdf, self.updateView]
 
         self.view.on_change_edit_aipo_id = [self.updateData, self.change_edit_aipo_id, self.updateView]
 
@@ -1288,12 +1436,15 @@ class Controller:
         except:
             print("Error : loadData")
         self.projects = Project.loadProjects(self.projects)
+        self.aipouser = AipoUser().load(self.aipouser)
 
     def exportData(self, filepath="./userdata.dat"):
         data = {x : getattr(self, x) for x in self.save_attrs}
         data['projects'] = Project.toDictProjects(self.projects)
+        data['aipouser'] = self.aipouser.toDict()
         with open(filepath, mode='w', encoding='cp932', errors='ignore') as f:
-            f.write(json.dumps(data))
+            data_json = json.dumps(data)
+            f.write(data_json)
 
     def push_projectlistop_duplicate(self):
         log("push_projectlistop_duplicate")
@@ -1319,7 +1470,7 @@ class Controller:
     def push_addbutton(self):
         log("push_addbutton")
         name = self.view.namebox.get()
-        if name is "" or name is None:
+        if name == "" or name is None:
             return
         self._name_list.append(Name(name))
 
@@ -1416,6 +1567,7 @@ class Controller:
     def push_sendaipo_button(self):
         log("push_sendaipo_button")
         if self.sendaipo_window:
+            self.sendaipo_window.window.focus_force()
             self.view.setInfo('二つ同時に開けません')
             return
         if not self.current_project:
@@ -1424,6 +1576,7 @@ class Controller:
         self.sendaipo_window = SendSettingView(self.view.window, self.current_project)
 
         # set listener
+        self.sendaipo_window.on_push_setting_button = [self.SSV_update, self.SSV_push_setting_button]
         self.sendaipo_window.on_push_cancel_button = [self.SSV_update, self.SSV_push_cancel_button]
         self.sendaipo_window.on_push_send_button = [self.SSV_update, self.SSV_push_send_button]
         self.sendaipo_window.on_change_sendmsg = [self.SSV_update, self.SSV_change_sendmsg]
@@ -1435,6 +1588,9 @@ class Controller:
         log("select_projectlist : ", self.project_list[self.project_list_selected[0]])
         selected = self.project_list_selected[0]
         editins = [ins for ins in self.projects if ins.list_index is selected][0]
+        if self.current_project:
+            self.current_project.genpdf = False
+        editins.genpdf = True
         self.current_project = editins
         self.current_name = None
 
@@ -1490,6 +1646,19 @@ class Controller:
     def SSV_update(self, *arg):
         self.sendaipo_window.update()
 
+    def SSV_push_setting_button(self):
+        log("SendSettingView - push_setting_button")
+        if self.aipousersetting_window:
+            self.aipousersetting_window.window.focus_force()
+            self.view.setInfo('二つ同時に開けません')
+            return
+        self.aipousersetting_window = AipoUserSettingView(self.view.window, self.aipouser)
+
+        # set listener
+        self.aipousersetting_window.on_push_cancel_button = [self.AUSV_update, self.AUSV_push_cancel_button]
+        self.aipousersetting_window.on_push_save_button = [self.AUSV_update, self.AUSV_push_save_button]
+        self.aipousersetting_window.on_close_window = [self.AUSV_update, self.AUSV_close_window]
+
     def SSV_push_cancel_button(self):
         log("SendSettingView - push_cancel_button")
         self.sendaipo_window.close_window()
@@ -1513,6 +1682,26 @@ class Controller:
     def SSV_close_window(self):
         log("SendSettingView - close_window")
         self.sendaipo_window = None
+
+    # AipoUserSettingView listener
+    def AUSV_update(self, *arg):
+        self.aipousersetting_window.update()
+        log("aipouser : %s" % str(self.aipouser.toDict()))
+
+    def AUSV_push_cancel_button(self):
+        log("AipoUserSettingView - push_cancel_button")
+        self.aipousersetting_window.close_window()
+        self.aipousersetting_window = None
+
+    def AUSV_push_save_button(self):
+        log("AipoUserSettingView - push_send_button")
+        self.aipousersetting_window.saveText()
+        self.aipousersetting_window.close_window()
+        self.aipousersetting_window = None
+
+    def AUSV_close_window(self):
+        log("AipoUserSettingView - close_window")
+        self.aipousersetting_window = None
 
 class Project:
     @staticmethod
@@ -1620,6 +1809,7 @@ class Project:
             else:
                 value = v
             setattr(self, k, value)
+        self.genpdf = False
         return self
 
     def toDict(self):
@@ -1629,8 +1819,8 @@ class Project:
         return data
 
     def toStr(self, isEdit=False):
-        name = "有効 " if self.genpdf else "　　 "
-        name += "編集中 " if isEdit else "　　　 "
+        #name = "有効 " if self.genpdf else "　　 "
+        name = "編集中 " if isEdit else "　　　 "
         name += self.name
         return name
 
@@ -2127,3 +2317,46 @@ class ExcelFile:
                 infofunc('エクセルファイルの処理中に問題が発生しました．')
             is_success &= False
         return is_success
+
+class AipoUser:
+    def __init__(self,
+        username=None,
+        password=None,
+        aipo_url=None,
+        portal_id=None
+    ):
+        self.username = username or ""
+        self.password = password or ""
+        self.aipo_url = aipo_url or ""
+        self.portal_id = portal_id or ""
+
+        self.save_attrs = ['username', 'password', 'aipo_url', 'portal_id']
+
+    def __repr__(self):
+        s = ""
+        for k,v in Name.toDictNames([self])[0].items():
+            s += str(k) + " : " + str(v) + ", "
+        return s
+
+    def __str__(self):
+        s = ""
+        for k,v in Name.toDictNames([self])[0].items():
+            s += str(k) + " : " + str(v) + ", "
+        return s
+
+    def save(self, username, password, aipo_url, portal_id):
+        self.username = username
+        self.password = password
+        self.aipo_url = aipo_url
+        self.portal_id = portal_id
+        save_aipouserinfo(username, password, aipo_url, portal_id)
+
+    def load(self, dict):
+        for k, v in dict.items():
+            setattr(self, k, v)
+        self.save(self.username, self.password, self.aipo_url, self.portal_id)
+        return self
+
+    def toDict(self):
+        data = {x : getattr(self, x) for x in self.save_attrs}
+        return data
