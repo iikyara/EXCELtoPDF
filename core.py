@@ -18,7 +18,7 @@ from tkinter import ttk
 from tkinter_extend import *
 from settings import *
 from utils import *
-from aipo_message import *
+import aipo_message
 
 print("core - DEBUG :", DEBUG)
 
@@ -1862,14 +1862,14 @@ class Project:
 
         # メッセージの送信
         print("Warning!!! : send message on aipo")
-        jsessionid = get_aipo_session()
+        jsessionid = aipo_message.get_aipo_session()
         if not jsessionid:
             infofunc("ネットワークエラーのため，メッセージを送信できませんでした．") if infofunc else 0
             self.is_success = False
             self.error_message = "ネットワークエラーのため，メッセージを送信できませんでした．"
             return False
 
-        jsessionid = aipo_login(jsessionid, username, password)
+        jsessionid = aipo_message.aipo_login(jsessionid, aipo_message.username, aipo_message.password)
         if not jsessionid:
             infofunc("ユーザー名またはパスワードが違ったため，メッセージを送信できませんでした．") if infofunc else 0
             self.is_success = False
@@ -1883,7 +1883,7 @@ class Project:
                 member.is_success = False
                 member.error_message = "添付ファイルが見つからなかったため，送信できませんでした．"
                 continue
-            if post_message(jsessionid, member.aipo_id, attachment_file, message):
+            if aipo_message.post_message(jsessionid, member.aipo_id, attachment_file, message):
                 member.is_success = True
                 member.error_message = "送信成功"
             else:
@@ -2349,7 +2349,7 @@ class AipoUser:
         self.password = password
         self.aipo_url = aipo_url
         self.portal_id = portal_id
-        save_aipouserinfo(username, password, aipo_url, portal_id)
+        aipo_message.save_aipouserinfo(username, password, aipo_url, portal_id)
 
     def load(self, dict):
         for k, v in dict.items():
