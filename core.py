@@ -2349,7 +2349,7 @@ class AipoUser:
         self.password = password
         self.aipo_url = aipo_url
         self.portal_id = portal_id
-        aipo_message.save_aipouserinfo(username, password, aipo_url, portal_id)
+        aipo_message.save_aipouserinfo(aipo_url, username, password, portal_id)
 
     def load(self, dict):
         for k, v in dict.items():
