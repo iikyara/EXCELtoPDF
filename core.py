@@ -2228,6 +2228,11 @@ class ExcelFile:
                 infofunc(self.filename + 'の読み込みに失敗しました．')
             return False
 
+        if not os.path.exists(root_dir):
+            if infofunc:
+                infofunc("出力ディレクトリが存在しません．")
+            return False
+
         is_success = True
 
         # create directory
