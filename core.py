@@ -1090,10 +1090,10 @@ class AipoUserSettingView:
         #self.saveText()
 
     def saveText(self):
-        self.aipouser.username = self.username.get().strip()
-        self.aipouser.password = self.password.get().strip()
-        self.aipouser.aipo_url = self.aipo_url.get().strip()
-        self.aipouser.portal_id = self.portal_id.get().strip()
+        self.aipouser.username = stripWithDefault(self.username.get())
+        self.aipouser.password = stripWithDefault(self.password.get())
+        self.aipouser.aipo_url = stripWithDefault(self.aipo_url.get())
+        self.aipouser.portal_id = stripWithDefault(self.portal_id.get())
 
     def setText(self, ins):
         self.username.delete(0, tk.END)
@@ -1295,6 +1295,12 @@ class Controller:
         if value.zip_filename == "":
             print("Error : invalid zip_filename")
             return
+        # strip
+        value.name = stripWithDefault(value.name)
+        value.pdf_password = stripWithDefault(value.pdf_password)
+        value.zip_password = stripWithDefault(value.zip_password)
+        value.pdf_filename = stripWithDefault(value.pdf_filename)
+        value.zip_filename = stripWithDefault(value.zip_filename)
         # correct
         value.pdf_password = value.pdf_password if value.pdf_password != "" else None
         value.zip_password = value.zip_password if value.zip_password != "" else None
@@ -1370,7 +1376,7 @@ class Controller:
     @output_file.setter
     def output_file(self, value):
         if self.current_project is not None:
-            self.current_project.output_file = value
+            self.current_project.output_file = stripWithDefault(value)
 
     @property
     def offset(self):
@@ -1469,7 +1475,7 @@ class Controller:
 
     def push_addbutton(self):
         log("push_addbutton")
-        name = self.view.namebox.get()
+        name = stripWithDefault(self.view.namebox.get())
         if name == "" or name is None:
             return
         self._name_list.append(Name(name))
@@ -2139,7 +2145,7 @@ class ExcelFile:
         tryRemoveFile(self.tmp_filename)
 
     def setFilename(self, filename):
-        self.filename = filename
+        self.filename = stripWithDefault(filename)
         self.setTmpFilename()
 
     def setTmpFilename(self):
