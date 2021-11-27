@@ -29,6 +29,9 @@ def tryRemoveFile(filename):
     except Exception as e:
         log('tryRemoveFile - ', e)
 
+def stripWithDefault(str, default=""):
+    return str.strip() if str is not None else default
+
 def searchMonth(str):
     return (re.compile(r'([0-9]+)月').findall(str) or [''])[0]
 
